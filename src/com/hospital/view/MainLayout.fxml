@@ -6,25 +6,41 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.hospital.controller.MainController"
-            prefHeight="600.0" prefWidth="800.0">
+            prefHeight="600.0" prefWidth="800.0"
+            stylesheets="@styles.css">
 
     <top>
-        <MenuBar>
-            <menus>
-                <Menu text="File">
-                    <items>
-                        <MenuItem text="Exit" onAction="#handleExit"/>
-                    </items>
-                </Menu>
-                <Menu text="View">
-                    <items>
-                        <MenuItem text="Patients" onAction="#showPatients"/>
-                        <MenuItem text="Doctors" onAction="#showDoctors"/>
-                        <MenuItem text="Appointments" onAction="#showAppointments"/>
-                    </items>
-                </Menu>
-            </menus>
-        </MenuBar>
+        <VBox>
+            <MenuBar>
+                <menus>
+                    <Menu text="File">
+                        <items>
+                            <MenuItem text="Exit" onAction="#handleExit"/>
+                        </items>
+                    </Menu>
+                    <Menu text="View">
+                        <items>
+                            <MenuItem text="Dashboard" onAction="#showDashboard"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem text="Patients" onAction="#showPatients"/>
+                            <MenuItem text="Doctors" onAction="#showDoctors"/>
+                            <MenuItem text="Appointments" onAction="#showAppointments"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem text="Medical Inventory" onAction="#showInventory"/>
+                            <MenuItem text="Prescriptions" onAction="#showPrescriptions"/>
+                            <MenuItem text="Patient Feedback" onAction="#showFeedback"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem text="Performance Reports" onAction="#showPerformance"/>
+                        </items>
+                    </Menu>
+                </menus>
+            </MenuBar>
+            <ToolBar prefHeight="40.0" style="-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-width: 0 0 1 0;">
+                <items>
+                    <Button fx:id="backButton" text="← Back" onAction="#handleBack" disable="true" style="-fx-background-color: transparent; -fx-text-fill: #34495e; -fx-font-weight: bold; -fx-cursor: hand;"/>
+                </items>
+            </ToolBar>
+        </VBox>
     </top>
 
     <center>
