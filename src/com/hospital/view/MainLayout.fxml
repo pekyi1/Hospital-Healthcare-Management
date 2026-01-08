@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.hospital.controller.MainController"
+            prefHeight="600.0" prefWidth="800.0">
+
+    <top>
+        <MenuBar>
+            <menus>
+                <Menu text="File">
+                    <items>
+                        <MenuItem text="Exit" onAction="#handleExit"/>
+                    </items>
+                </Menu>
+                <Menu text="View">
+                    <items>
+                        <MenuItem text="Patients" onAction="#showPatients"/>
+                        <MenuItem text="Doctors" onAction="#showDoctors"/>
+                        <MenuItem text="Appointments" onAction="#showAppointments"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+    </top>
+
+    <center>
+        <StackPane fx:id="contentArea">
+            <Label text="Welcome to Hospital Management System"/>
+        </StackPane>
+    </center>
+
+</BorderPane>
