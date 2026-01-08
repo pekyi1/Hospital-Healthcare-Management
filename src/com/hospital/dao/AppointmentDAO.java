@@ -66,4 +66,16 @@ public class AppointmentDAO {
                 rs.getString("status"),
                 rs.getString("notes"));
     }
+
+    public int getAppointmentCount() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM appointments";
+        try (Connection conn = DBUtil.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
 }

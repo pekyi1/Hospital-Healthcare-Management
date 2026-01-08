@@ -48,6 +48,17 @@ public class DoctorController {
         hospitalService = new HospitalService();
         setupTableColumns();
         loadDoctors();
+
+        doctorTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                firstNameField.setText(newSelection.getFirstName());
+                lastNameField.setText(newSelection.getLastName());
+                specializationField.setText(newSelection.getSpecialization());
+                deptIdField.setText(String.valueOf(newSelection.getDepartmentId()));
+                emailField.setText(newSelection.getEmail());
+                phoneField.setText(newSelection.getPhone());
+            }
+        });
     }
 
     private void setupTableColumns() {
@@ -90,11 +101,72 @@ public class DoctorController {
         try {
             hospitalService.registerDoctor(doctor);
             loadDoctors();
-            clearFields();
+            handleClear();
             showAlert("Success", "Doctor added successfully.");
         } catch (SQLException e) {
             showAlert("Error", "Failed to add doctor: " + e.getMessage());
         }
+    }
+
+    @FXML
+    private void handleUpdateDoctor() {
+        Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showAlert("Warning", "Please select a doctor to update.");
+            return;
+        }
+        if (!validateInput())
+            return;
+
+        selected.setFirstName(firstNameField.getText());
+        selected.setLastName(lastNameField.getText());
+        selected.setSpecialization(specializationField.getText());
+        try {
+            selected.setDepartmentId(Integer.parseInt(deptIdField.getText()));
+        } catch (NumberFormatException e) {
+            showAlert("Error", "Department ID must be a number.");
+            return;
+        }
+        selected.setEmail(emailField.getText());
+        selected.setPhone(phoneField.getText());
+
+        try {
+            hospitalService.updateDoctor(selected);
+            loadDoctors();
+            handleClear();
+            showAlert("Success", "Doctor updated successfully.");
+        } catch (SQLException e) {
+            showAlert("Error", "Failed to update doctor: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleDeleteDoctor() {
+        Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showAlert("Warning", "Please select a doctor to delete.");
+            return;
+        }
+
+        try {
+            hospitalService.deleteDoctor(selected.getId());
+            doctorList.remove(selected);
+            handleClear(); // Clear fields after delete
+            showAlert("Success", "Doctor deleted successfully.");
+        } catch (SQLException e) {
+            showAlert("Error", "Failed to delete doctor: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleClear() {
+        firstNameField.clear();
+        lastNameField.clear();
+        specializationField.clear();
+        deptIdField.clear();
+        emailField.clear();
+        phoneField.clear();
+        doctorTable.getSelectionModel().clearSelection();
     }
 
     @FXML
@@ -111,14 +183,7 @@ public class DoctorController {
         return true;
     }
 
-    private void clearFields() {
-        firstNameField.clear();
-        lastNameField.clear();
-        specializationField.clear();
-        deptIdField.clear();
-        emailField.clear();
-        phoneField.clear();
-    }
+
 
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

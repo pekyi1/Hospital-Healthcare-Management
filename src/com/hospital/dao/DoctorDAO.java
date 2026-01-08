@@ -82,4 +82,16 @@ public class DoctorDAO {
                 rs.getString("phone"),
                 rs.getInt("department_id"));
     }
+
+    public int getDoctorCount() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM doctors";
+        try (Connection conn = DBUtil.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
 }
