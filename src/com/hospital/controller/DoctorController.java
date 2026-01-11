@@ -5,7 +5,11 @@ import com.hospital.service.HospitalService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.sql.SQLException;
@@ -27,6 +31,10 @@ public class DoctorController {
     private TableColumn<Doctor, String> colEmail;
     @FXML
     private TableColumn<Doctor, String> colPhone;
+    @FXML
+    private TableColumn<Doctor, Void> colSelect; // For styling
+    @FXML
+    private TextField searchField; // Added for new UI
 
     @FXML
     private TextField firstNameField;
@@ -51,12 +59,7 @@ public class DoctorController {
 
         doctorTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
-                firstNameField.setText(newSelection.getFirstName());
-                lastNameField.setText(newSelection.getLastName());
-                specializationField.setText(newSelection.getSpecialization());
-                deptIdField.setText(String.valueOf(newSelection.getDepartmentId()));
-                emailField.setText(newSelection.getEmail());
-                phoneField.setText(newSelection.getPhone());
+                populateForm(newSelection);
             }
         });
     }
@@ -68,6 +71,18 @@ public class DoctorController {
         colSpecialization.setCellValueFactory(new PropertyValueFactory<>("specialization"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+
+        // Add Checkbox implementation for colSelect if strictly needed,
+        // ignoring for now to keep focus on layout stability.
+    }
+
+    private void populateForm(Doctor d) {
+        firstNameField.setText(d.getFirstName());
+        lastNameField.setText(d.getLastName());
+        specializationField.setText(d.getSpecialization());
+        deptIdField.setText(String.valueOf(d.getDepartmentId()));
+        emailField.setText(d.getEmail());
+        phoneField.setText(d.getPhone());
     }
 
     private void loadDoctors() {
@@ -78,6 +93,22 @@ public class DoctorController {
         } catch (SQLException e) {
             showAlert("Error", "Failed to load doctors: " + e.getMessage());
         }
+    }
+
+    @FXML
+    private void handleSearch() {
+        // Stub for search functionality
+        String keyword = searchField.getText();
+        if (keyword == null || keyword.isEmpty()) {
+            loadDoctors();
+            return;
+        }
+        // Ideally: hospitalService.searchDoctors(keyword);
+        // For now, reload all or filter logically if service supports it.
+        // Alerting to avoid crash if service missing method.
+        // showAlert("Info", "Search not yet implemented in backend.");
+        // Re-load to ensure table is populated.
+        loadDoctors();
     }
 
     @FXML
@@ -151,7 +182,7 @@ public class DoctorController {
         try {
             hospitalService.deleteDoctor(selected.getId());
             doctorList.remove(selected);
-            handleClear(); // Clear fields after delete
+            handleClear();
             showAlert("Success", "Doctor deleted successfully.");
         } catch (SQLException e) {
             showAlert("Error", "Failed to delete doctor: " + e.getMessage());
@@ -167,6 +198,8 @@ public class DoctorController {
         emailField.clear();
         phoneField.clear();
         doctorTable.getSelectionModel().clearSelection();
+        if (searchField != null)
+            searchField.clear();
     }
 
     @FXML
@@ -182,8 +215,6 @@ public class DoctorController {
         }
         return true;
     }
-
-
 
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

@@ -231,4 +231,46 @@ public class HospitalService {
     public int getAppointmentCount() throws SQLException {
         return appointmentDAO.getAppointmentCount();
     }
+
+    // Chart Data Aggregation (In-Memory for now, to support dynamic charts without
+    // complex SQL)
+    public Map<String, Integer> getAppointmentsPerDay() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Appointment> all = appointmentDAO.getAllAppointments();
+        Map<String, Integer> stats = new HashMap<>();
+
+        // Initialize days to ensure 0s are present
+        String[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+        for (String day : days)
+            stats.put(day, 0);
+
+        // Simple aggregation based on DayOfWeek
+        // Note: Real-world app would filter by "This Week" using date comparisons.
+        // Here we just map all appointments to day-of-week buckets for demonstration of
+        // "Real Data from DB"
+        for (Appointment a : all) {
+            String day = a.getAppointmentDate().getDayOfWeek().name(); // MONDAY, TUESDAY...
+            String shortDay = day.substring(0, 1).toUpperCase() + day.substring(1, 3).toLowerCase(); // Mon, Tue
+            stats.put(shortDay, stats.getOrDefault(shortDay, 0) + 1);
+        }
+
+        logPerformance("getAppointmentsPerDay", start);
+        return stats;
+    }
+
+    public Map<String, Integer> getDoctorSpecializationStats() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Doctor> all = doctorDAO.getAllDoctors();
+        Map<String, Integer> stats = new HashMap<>();
+
+        for (Doctor d : all) {
+            String spec = d.getSpecialization();
+            if (spec == null || spec.isEmpty())
+                spec = "Unknown";
+            stats.put(spec, stats.getOrDefault(spec, 0) + 1);
+        }
+
+        logPerformance("getDoctorSpecializationStats", start);
+        return stats;
+    }
 }
