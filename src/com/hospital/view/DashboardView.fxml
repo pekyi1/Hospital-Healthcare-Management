@@ -19,7 +19,7 @@
 
         <!-- Header -->
         <VBox spacing="5">
-            <Label text="Welcome back, Admin 👋" styleClass="header-label"/>
+            <Label fx:id="lblDashboardWelcome" text="Welcome back, Admin 👋" styleClass="header-label"/>
             <Label text="Here is the latest update for the last 7 days." styleClass="header-sublabel"/>
         </VBox>
 
