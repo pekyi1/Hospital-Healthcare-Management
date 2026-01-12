@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox spacing="10" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hospital.controller.InventoryController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Medical Inventory Management" styleClass="header-label">
+        <font>
+            <Font size="20"/>
+        </font>
+    </Label>
+
+    <HBox spacing="10">
+        <Button text="Add New Item" onAction="#handleAddItem"/>
+    </HBox>
+
+    <TableView fx:id="inventoryTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idColumn" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="nameColumn" text="Item Name" prefWidth="150"/>
+            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="100"/>
+            <TableColumn fx:id="quantityColumn" text="Quantity" prefWidth="80"/>
+            <TableColumn fx:id="priceColumn" text="Unit Price" prefWidth="80"/>
+            <TableColumn fx:id="updatedColumn" text="Last Updates" prefWidth="150"/>
+        </columns>
+    </TableView>
+
+</VBox>

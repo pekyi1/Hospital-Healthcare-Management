@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.chart.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.hospital.controller.DashboardController"
+            fitToWidth="true"
+            styleClass="scroll-pane">
+
+    <VBox spacing="30.0" style="-fx-background-color: #f4f6f8;">
+        <padding>
+            <Insets top="30" right="30" bottom="30" left="30"/>
+        </padding>
+
+        <!-- Header -->
+        <VBox spacing="5">
+            <Label text="Welcome back, Admin 👋" styleClass="header-label"/>
+            <Label text="Here is the latest update for the last 7 days." styleClass="header-sublabel"/>
+        </VBox>
+
+        <!-- Stats Cards Container -->
+        <HBox spacing="20.0" alignment="CENTER_LEFT">
+            <!-- Overall Visitors (Green Card) -->
+            <VBox styleClass="card, card-green" prefWidth="250" prefHeight="140" spacing="10" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Overall visitors" styleClass="card-title-white"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="..." textFill="white"/>
+                </HBox>
+                <Label fx:id="visitorCountLabel" text="10.525" styleClass="card-value-white"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="From last week" textFill="white" style="-fx-opacity: 0.8;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Total Patient (White Card) -->
+            <VBox styleClass="card" prefWidth="250" prefHeight="140" spacing="10" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Total patient" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="..." textFill="#bdc3c7"/>
+                </HBox>
+                <Label fx:id="patientCountLabel" text="5.715" styleClass="card-value"/>
+                <Label text="Increase in data" style="-fx-text-fill: #95a5a6;"/>
+            </VBox>
+
+            <!-- Surgery (White Card) -->
+            <VBox styleClass="card" prefWidth="250" prefHeight="140" spacing="10" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Surgery" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="..." textFill="#bdc3c7"/>
+                </HBox>
+                <Label fx:id="doctorCountLabel" text="523" styleClass="card-value"/> 
+                <!-- Reusing doctorCountLabel for Surgery/Doctors stat for now -->
+                <Label text="Active Procedures" style="-fx-text-fill: #95a5a6;"/>
+            </VBox>
+        </HBox>
+
+        <!-- Charts Section -->
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+            <!-- Bar Chart -->
+            <VBox styleClass="card" HBox.hgrow="ALWAYS" spacing="10">
+                <Label text="Patient Statistics" styleClass="card-title"/>
+                <BarChart fx:id="patientChart" legendVisible="false" verticalGridLinesVisible="false">
+                    <xAxis>
+                        <CategoryAxis label="Day"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Patients" tickUnit="10"/>
+                    </yAxis>
+                </BarChart>
+            </VBox>
+
+            <!-- Pie Chart or Side Widget -->
+            <VBox styleClass="card" prefWidth="300" spacing="10">
+                <Label text="Departments" styleClass="card-title"/>
+                <PieChart fx:id="departmentChart" clockwise="true" labelsVisible="false"/>
+                <Label text="Surgery, Dermatology, etc." style="-fx-text-fill: #95a5a6; -fx-alignment: center;" maxWidth="Infinity"/>
+            </VBox>
+        </HBox>
+
+        <!-- Quick Actions Footer -->
+        <FlowPane hgap="15" vgap="15">
+             <Button text="Register Patient" onAction="#goToPatients" styleClass="action-button"/>
+             <Button text="New Appointment" onAction="#goToAppointments" styleClass="action-button"/>
+        </FlowPane>
+
+    </VBox>
+
+</ScrollPane>

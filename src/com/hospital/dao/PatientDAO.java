@@ -119,4 +119,15 @@ public class PatientDAO {
                 rs.getString("phone"),
                 rs.getString("address"));
     }
+    public int getPatientCount() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM patients";
+        try (Connection conn = DBUtil.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
 }

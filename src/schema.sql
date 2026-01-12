@@ -1,6 +1,10 @@
 -- Database Schema for Hospital Management System
 
--- Drop tables if they exist
+-- Drop tables if they exist (Order matters for Foreign Keys)
+DROP TABLE IF EXISTS prescription_items;
+DROP TABLE IF EXISTS prescriptions;
+DROP TABLE IF EXISTS patient_feedback;
+DROP TABLE IF EXISTS medical_inventory;
 DROP TABLE IF EXISTS appointments;
 DROP TABLE IF EXISTS doctors;
 DROP TABLE IF EXISTS patients;
@@ -67,3 +71,58 @@ INSERT INTO patients (first_name, last_name, gender, birth_date, email, phone, a
 INSERT INTO doctors (first_name, last_name, specialization, email, phone, department_id) VALUES
 ('Alice', 'Williams', 'Cardiologist', 'alice.w@hospital.com', '555-0101', 1),
 ('Bob', 'Johnson', 'Neurologist', 'bob.j@hospital.com', '555-0102', 2);
+
+-- Create Medical Inventory Table
+CREATE TABLE medical_inventory (
+    id SERIAL PRIMARY KEY,
+    item_name VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    quantity INT DEFAULT 0,
+    unit_price DECIMAL(10, 2),
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Prescriptions Table
+CREATE TABLE prescriptions (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    appointment_id INT,
+    prescription_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (patient_id) REFERENCES patients(id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id),
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+);
+
+-- Create Prescription Items Table
+CREATE TABLE prescription_items (
+    id SERIAL PRIMARY KEY,
+    prescription_id INT NOT NULL,
+    inventory_id INT NOT NULL,
+    quantity INT NOT NULL,
+    dosage_instructions VARCHAR(200),
+    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id),
+    FOREIGN KEY (inventory_id) REFERENCES medical_inventory(id)
+);
+
+-- Create Patient Feedback Table
+CREATE TABLE patient_feedback (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL,
+    rating INT CHECK (rating >= 1 AND rating <= 5),
+    comments TEXT,
+    feedback_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(id)
+);
+
+-- Additional Indexes
+CREATE INDEX idx_inventory_name ON medical_inventory(item_name);
+CREATE INDEX idx_prescriptions_patient ON prescriptions(patient_id);
+
+-- Sample Data for Inventory
+INSERT INTO medical_inventory (item_name, category, quantity, unit_price) VALUES
+('Paracetamol', 'Medicine', 500, 5.00),
+('Amoxicillin', 'Antibiotic', 200, 15.50),
+('Bandage', 'Supply', 100, 2.00);
+

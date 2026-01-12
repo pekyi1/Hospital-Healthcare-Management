@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox spacing="10" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hospital.controller.PrescriptionController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Prescription Management" styleClass="header-label">
+        <font>
+            <Font size="20"/>
+        </font>
+    </Label>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Search Prescriptions for Patient ID:"/>
+        <TextField fx:id="searchPatientIdField" promptText="e.g. 1"/>
+        <Button text="Search" onAction="#handleSearch"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="New Prescription" onAction="#handleAddPrescription"/>
+    </HBox>
+
+    <TableView fx:id="prescriptionTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idColumn" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="patientIdColumn" text="Patient ID" prefWidth="80"/>
+            <TableColumn fx:id="doctorIdColumn" text="Doctor ID" prefWidth="80"/>
+            <TableColumn fx:id="dateColumn" text="Date" prefWidth="150"/>
+            <TableColumn fx:id="notesColumn" text="Notes" prefWidth="300"/>
+        </columns>
+    </TableView>
+
+</VBox>

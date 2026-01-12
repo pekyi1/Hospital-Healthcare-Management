@@ -2,7 +2,9 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Font?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -12,6 +14,11 @@
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
 
+    <Label text="Appointment Scheduling" styleClass="header-label">
+        <font>
+            <Font size="24.0"/>
+        </font>
+    </Label>
     <TableView fx:id="appointmentTable" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="colId" text="ID" prefWidth="50.0"/>

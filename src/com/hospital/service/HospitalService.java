@@ -6,6 +6,12 @@ import com.hospital.dao.PatientDAO;
 import com.hospital.model.Appointment;
 import com.hospital.model.Doctor;
 import com.hospital.model.Patient;
+import com.hospital.model.MedicalInventory;
+import com.hospital.model.Prescription;
+import com.hospital.model.PatientFeedback;
+import com.hospital.dao.InventoryDAO;
+import com.hospital.dao.PrescriptionDAO;
+import com.hospital.dao.FeedbackDAO;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -17,15 +23,22 @@ public class HospitalService {
     private final PatientDAO patientDAO;
     private final DoctorDAO doctorDAO;
     private final AppointmentDAO appointmentDAO;
+    private final InventoryDAO inventoryDAO;
+    private final PrescriptionDAO prescriptionDAO;
+    private final FeedbackDAO feedbackDAO;
 
     // In-Memory Cache
     private Map<Integer, Patient> patientCache = new HashMap<>();
     private Map<Integer, Doctor> doctorCache = new HashMap<>();
+    private Map<Integer, MedicalInventory> inventoryCache = new HashMap<>();
 
     public HospitalService() {
         this.patientDAO = new PatientDAO();
         this.doctorDAO = new DoctorDAO();
         this.appointmentDAO = new AppointmentDAO();
+        this.inventoryDAO = new InventoryDAO();
+        this.prescriptionDAO = new PrescriptionDAO();
+        this.feedbackDAO = new FeedbackDAO();
     }
 
     // Performance Logger
@@ -79,6 +92,38 @@ public class HospitalService {
         logPerformance("deletePatient", start);
     }
 
+    /**
+     * User Story 3.2: Sorting Optimization
+     * Sorts patients by Last Name then First Name using Merge Sort (via
+     * Collections.sort O(n log n)).
+     */
+    public void sortPatientsByName(List<Patient> patients) {
+        long start = System.currentTimeMillis();
+        patients.sort((p1, p2) -> {
+            int res = p1.getLastName().compareToIgnoreCase(p2.getLastName());
+            if (res == 0) {
+                return p1.getFirstName().compareToIgnoreCase(p2.getFirstName());
+            }
+            return res;
+        });
+        logPerformance("sortPatientsByName (In-Memory)", start);
+    }
+
+    /**
+     * User Story 3.2: Searching Optimization (Cache)
+     * Searches patients from the in-memory cache to avoid DB hits.
+     */
+    public List<Patient> searchPatientsFromCache(String keyword) {
+        long start = System.currentTimeMillis();
+        String lowerKeyword = keyword.toLowerCase();
+        List<Patient> results = patientCache.values().stream()
+                .filter(p -> p.getFirstName().toLowerCase().contains(lowerKeyword) ||
+                        p.getLastName().toLowerCase().contains(lowerKeyword))
+                .toList();
+        logPerformance("searchPatientsFromCache", start);
+        return results;
+    }
+
     // Doctor Services
     public void registerDoctor(Doctor doctor) throws SQLException {
         long start = System.currentTimeMillis();
@@ -99,6 +144,20 @@ public class HospitalService {
         return doctors;
     }
 
+    public void updateDoctor(Doctor doctor) throws SQLException {
+        long start = System.currentTimeMillis();
+        doctorDAO.updateDoctor(doctor);
+        doctorCache.put(doctor.getId(), doctor);
+        logPerformance("updateDoctor", start);
+    }
+
+    public void deleteDoctor(int id) throws SQLException {
+        long start = System.currentTimeMillis();
+        doctorDAO.deleteDoctor(id);
+        doctorCache.remove(id);
+        logPerformance("deleteDoctor", start);
+    }
+
     // Appointment Services
     public void scheduleAppointment(Appointment appointment) throws SQLException {
         long start = System.currentTimeMillis();
@@ -111,5 +170,107 @@ public class HospitalService {
         List<Appointment> appointments = appointmentDAO.getAllAppointments();
         logPerformance("getAllAppointments", start);
         return appointments;
+    }
+
+    // Inventory Services
+    public void addInventoryItem(MedicalInventory item) throws SQLException {
+        long start = System.currentTimeMillis();
+        inventoryDAO.addItem(item);
+        inventoryCache.put(item.getId(), item);
+        logPerformance("addInventoryItem", start);
+    }
+
+    public List<MedicalInventory> getAllInventoryItems() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<MedicalInventory> items = inventoryDAO.getAllItems();
+        inventoryCache.clear();
+        for (MedicalInventory item : items) {
+            inventoryCache.put(item.getId(), item);
+        }
+        logPerformance("getAllInventoryItems", start);
+        return items;
+    }
+
+    public void updateInventoryItem(MedicalInventory item) throws SQLException {
+        long start = System.currentTimeMillis();
+        inventoryDAO.updateItem(item);
+        inventoryCache.put(item.getId(), item);
+        logPerformance("updateInventoryItem", start);
+    }
+
+    // Prescription Services
+    public void prescribeMedication(Prescription prescription) throws SQLException {
+        long start = System.currentTimeMillis();
+        prescriptionDAO.addPrescription(prescription);
+        logPerformance("prescribeMedication", start);
+    }
+
+    public List<Prescription> getPatientPrescriptions(int patientId) throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Prescription> list = prescriptionDAO.getPrescriptionsByPatientId(patientId);
+        logPerformance("getPatientPrescriptions", start);
+        return list;
+    }
+
+    // Feedback Services
+    public void submitFeedback(PatientFeedback feedback) throws SQLException {
+        long start = System.currentTimeMillis();
+        feedbackDAO.addFeedback(feedback);
+        logPerformance("submitFeedback", start);
+    }
+
+    // Dashboard Statistics
+    public int getPatientCount() throws SQLException {
+        return patientDAO.getPatientCount();
+    }
+
+    public int getDoctorCount() throws SQLException {
+        return doctorDAO.getDoctorCount();
+    }
+
+    public int getAppointmentCount() throws SQLException {
+        return appointmentDAO.getAppointmentCount();
+    }
+
+    // Chart Data Aggregation (In-Memory for now, to support dynamic charts without
+    // complex SQL)
+    public Map<String, Integer> getAppointmentsPerDay() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Appointment> all = appointmentDAO.getAllAppointments();
+        Map<String, Integer> stats = new HashMap<>();
+
+        // Initialize days to ensure 0s are present
+        String[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+        for (String day : days)
+            stats.put(day, 0);
+
+        // Simple aggregation based on DayOfWeek
+        // Note: Real-world app would filter by "This Week" using date comparisons.
+        // Here we just map all appointments to day-of-week buckets for demonstration of
+        // "Real Data from DB"
+        for (Appointment a : all) {
+            String day = a.getAppointmentDate().getDayOfWeek().name(); // MONDAY, TUESDAY...
+            String shortDay = day.substring(0, 1).toUpperCase() + day.substring(1, 3).toLowerCase(); // Mon, Tue
+            stats.put(shortDay, stats.getOrDefault(shortDay, 0) + 1);
+        }
+
+        logPerformance("getAppointmentsPerDay", start);
+        return stats;
+    }
+
+    public Map<String, Integer> getDoctorSpecializationStats() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Doctor> all = doctorDAO.getAllDoctors();
+        Map<String, Integer> stats = new HashMap<>();
+
+        for (Doctor d : all) {
+            String spec = d.getSpecialization();
+            if (spec == null || spec.isEmpty())
+                spec = "Unknown";
+            stats.put(spec, stats.getOrDefault(spec, 0) + 1);
+        }
+
+        logPerformance("getDoctorSpecializationStats", start);
+        return stats;
     }
 }
