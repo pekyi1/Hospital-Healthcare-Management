@@ -16,6 +16,8 @@ import java.util.HashMap;
 public class DashboardController {
 
     @FXML
+    private Label lblDashboardWelcome;
+    @FXML
     private Label visitorCountLabel;
     @FXML
     private Label patientCountLabel;
@@ -31,6 +33,14 @@ public class DashboardController {
 
     public void initialize() {
         hospitalService = new HospitalService();
+
+        // Update welcome message based on current role
+        MainController mainController = MainController.getInstance();
+        if (mainController != null && lblDashboardWelcome != null) {
+            String role = mainController.getCurrentRole();
+            lblDashboardWelcome.setText("Welcome back, " + role + " \uD83D\uDC4B");
+        }
+
         loadStatistics();
         setupCharts();
     }
