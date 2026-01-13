@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.application.Platform;
 import javafx.animation.FadeTransition;
 import javafx.util.Duration;
@@ -47,13 +48,21 @@ public class MainController {
     @FXML
     private Button btnTabPatient;
 
+    @FXML
+    private Label lblWelcome;
+
     private static MainController instance;
+    private String currentRole = "Admin"; // Track current role
 
     private Stack<String> navigationHistory = new Stack<>();
     private String currentView = "/com/hospital/view/DashboardView.fxml"; // Default start
 
     public static MainController getInstance() {
         return instance;
+    }
+
+    public String getCurrentRole() {
+        return currentRole;
     }
 
     @FXML
@@ -201,6 +210,13 @@ public class MainController {
     }
 
     private void setRole(String role) {
+        this.currentRole = role; // Store current role
+
+        // Welcome Message
+        if (lblWelcome != null) {
+            lblWelcome.setText("Welcome back, " + role + " \uD83D\uDC4B"); // Wave emoji
+        }
+
         // 1. Update Tab Styles
         updateTabStyle(btnTabAdmin, role.equals("Admin"));
         updateTabStyle(btnTabDoctor, role.equals("Doctor"));
