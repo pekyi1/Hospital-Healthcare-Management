@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hospital.controller.PatientFormDialogController"
+      spacing="20"
+      style="-fx-background-color: white; -fx-padding: 30;">
+    
+    <!-- Form Title -->
+    <Label fx:id="dialogTitle" text="Add New Patient" 
+           style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+    
+    <Separator/>
+    
+    <!-- Form Fields -->
+    <GridPane hgap="15" vgap="15">
+        
+        <!-- Row 0: First Name and Last Name -->
+        <Label text="First Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"
+               style="-fx-font-weight: bold;"/>
+        <TextField fx:id="firstNameField" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                  promptText="Enter first name" prefWidth="200"/>
+        
+        <Label text="Last Name:" GridPane.columnIndex="2" GridPane.rowIndex="0"
+               style="-fx-font-weight: bold;"/>
+        <TextField fx:id="lastNameField" GridPane.columnIndex="3" GridPane.rowIndex="0"
+                  promptText="Enter last name" prefWidth="200"/>
+        
+        <!-- Row 1: Gender and Date of Birth -->
+        <Label text="Gender:" GridPane.columnIndex="0" GridPane.rowIndex="1"
+               style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="genderField" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                 promptText="Select gender" prefWidth="200"/>
+        
+        <Label text="Date of Birth:" GridPane.columnIndex="2" GridPane.rowIndex="1"
+               style="-fx-font-weight: bold;"/>
+        <DatePicker fx:id="dobField" GridPane.columnIndex="3" GridPane.rowIndex="1"
+                   promptText="Select DOB" prefWidth="200"/>
+        
+        <!-- Row 2: Email and Phone -->
+        <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="2"
+               style="-fx-font-weight: bold;"/>
+        <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="2"
+                  promptText="user@example.com" prefWidth="200"/>
+        
+        <Label text="Phone:" GridPane.columnIndex="2" GridPane.rowIndex="2"
+               style="-fx-font-weight: bold;"/>
+        <TextField fx:id="phoneField" GridPane.columnIndex="3" GridPane.rowIndex="2"
+                  promptText="555-1234" prefWidth="200"/>
+        
+        <!-- Row 3: Address (spans 3 columns) and Created Date -->
+        <Label text="Address:" GridPane.columnIndex="0" GridPane.rowIndex="3"
+               style="-fx-font-weight: bold;"/>
+        <TextField fx:id="addressField" GridPane.columnIndex="1" GridPane.rowIndex="3"
+                  promptText="Enter full address" prefWidth="200"/>
+        
+        <Label text="Created Date:" GridPane.columnIndex="2" GridPane.rowIndex="3"
+               style="-fx-font-weight: bold;"/>
+        <DatePicker fx:id="createdDateField" GridPane.columnIndex="3" GridPane.rowIndex="3"
+                   promptText="Select Date" prefWidth="200"/>
+        
+    </GridPane>
+    
+    <Separator/>
+    
+    <!-- Validation Info -->
+    <VBox spacing="5" style="-fx-background-color: #f0f8ff; -fx-padding: 10; -fx-background-radius: 5;">
+        <Label text="Required fields: First Name, Last Name, Gender, Date of Birth, Email"
+               style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+        <Label text="Email format: user@example.com | Phone format: numbers and symbols (), +, -"
+               style="-fx-font-size: 11px; -fx-text-fill: #555;"/>
+    </VBox>
+    
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="saveButton" text="Save" onAction="#handleSave" 
+                style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 10 30; -fx-font-weight: bold;"/>
+        <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancel"
+                style="-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-padding: 10 30;"/>
+    </HBox>
+    
+</VBox>

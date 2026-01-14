@@ -9,13 +9,18 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class InventoryController {
 
+    @FXML
+    private TextField searchField;
     @FXML
     private TableView<MedicalInventory> inventoryTable;
     @FXML
@@ -30,9 +35,12 @@ public class InventoryController {
     private TableColumn<MedicalInventory, BigDecimal> priceColumn;
     @FXML
     private TableColumn<MedicalInventory, String> updatedColumn;
+    @FXML
+    private TableColumn<MedicalInventory, Void> actionsColumn;
 
     private HospitalService hospitalService;
     private ObservableList<MedicalInventory> inventoryList = FXCollections.observableArrayList();
+    private List<MedicalInventory> allItems;
 
     public InventoryController() {
         this.hospitalService = new HospitalService();
@@ -47,16 +55,69 @@ public class InventoryController {
         priceColumn.setCellValueFactory(new PropertyValueFactory<>("unitPrice"));
         updatedColumn.setCellValueFactory(new PropertyValueFactory<>("lastUpdated"));
 
+        setupActionsColumn();
         loadInventory();
+    }
+
+    private void setupActionsColumn() {
+        actionsColumn.setCellFactory(param -> new TableCell<>() {
+            private final Button editBtn = new Button("Edit");
+            private final Button deleteBtn = new Button("Delete");
+            private final HBox container = new HBox(5, editBtn, deleteBtn);
+
+            {
+                editBtn.setStyle(
+                        "-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 4 8; -fx-cursor: hand;");
+                deleteBtn.setStyle(
+                        "-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 4 8; -fx-cursor: hand;");
+
+                editBtn.setOnAction(event -> {
+                    MedicalInventory item = getTableView().getItems().get(getIndex());
+                    handleEditItem(item);
+                });
+
+                deleteBtn.setOnAction(event -> {
+                    MedicalInventory item = getTableView().getItems().get(getIndex());
+                    handleDeleteItem(item);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void unused, boolean empty) {
+                super.updateItem(unused, empty);
+                setGraphic(empty ? null : container);
+            }
+        });
     }
 
     private void loadInventory() {
         try {
-            inventoryList.setAll(hospitalService.getAllInventoryItems());
+            allItems = hospitalService.getAllInventoryItems();
+            inventoryList.setAll(allItems);
             inventoryTable.setItems(inventoryList);
         } catch (SQLException e) {
             showAlert("Error", "Failed to load inventory: " + e.getMessage());
         }
+    }
+
+    @FXML
+    private void handleSearch() {
+        String keyword = searchField.getText().trim().toLowerCase();
+        if (keyword.isEmpty()) {
+            inventoryList.setAll(allItems);
+        } else {
+            List<MedicalInventory> filtered = allItems.stream()
+                    .filter(item -> item.getItemName().toLowerCase().contains(keyword)
+                            || item.getCategory().toLowerCase().contains(keyword))
+                    .collect(Collectors.toList());
+            inventoryList.setAll(filtered);
+        }
+    }
+
+    @FXML
+    private void handleRefresh() {
+        searchField.clear();
+        loadInventory();
     }
 
     @FXML
@@ -74,6 +135,37 @@ public class InventoryController {
         });
     }
 
+    private void handleEditItem(MedicalInventory item) {
+        Dialog<MedicalInventory> dialog = createItemDialog(item);
+        Optional<MedicalInventory> result = dialog.showAndWait();
+
+        result.ifPresent(updatedItem -> {
+            try {
+                hospitalService.updateInventoryItem(updatedItem);
+                loadInventory();
+            } catch (SQLException e) {
+                showAlert("Error", "Failed to update item: " + e.getMessage());
+            }
+        });
+    }
+
+    private void handleDeleteItem(MedicalInventory item) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText("Delete Inventory Item");
+        confirm.setContentText("Are you sure you want to delete \"" + item.getItemName() + "\"?");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                hospitalService.deleteInventoryItem(item.getId());
+                loadInventory();
+            } catch (SQLException e) {
+                showAlert("Error", "Failed to delete item: " + e.getMessage());
+            }
+        }
+    }
+
     private Dialog<MedicalInventory> createItemDialog(MedicalInventory existingItem) {
         Dialog<MedicalInventory> dialog = new Dialog<>();
         dialog.setTitle(existingItem == null ? "Add Inventory Item" : "Edit Inventory Item");
@@ -88,13 +180,13 @@ public class InventoryController {
         grid.setPadding(new Insets(20, 150, 10, 10));
 
         TextField nameField = new TextField();
-        nameField.setPromptText("Item Name");
+        nameField.setPromptText("e.g., Paracetamol, Amoxicillin");
         TextField categoryField = new TextField();
-        categoryField.setPromptText("Category");
+        categoryField.setPromptText("e.g., Medicine, Antibiotic, Supply");
         TextField quantityField = new TextField();
-        quantityField.setPromptText("Quantity");
+        quantityField.setPromptText("e.g., 500");
         TextField priceField = new TextField();
-        priceField.setPromptText("Unit Price");
+        priceField.setPromptText("e.g., 5.00");
 
         if (existingItem != null) {
             nameField.setText(existingItem.getItemName());
@@ -117,10 +209,16 @@ public class InventoryController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
                 try {
-                    String name = nameField.getText();
-                    String category = categoryField.getText();
-                    int qty = Integer.parseInt(quantityField.getText());
-                    BigDecimal price = new BigDecimal(priceField.getText());
+                    String name = nameField.getText().trim();
+                    String category = categoryField.getText().trim();
+
+                    if (name.isEmpty() || category.isEmpty()) {
+                        showAlert("Validation Error", "Name and Category are required.");
+                        return null;
+                    }
+
+                    int qty = Integer.parseInt(quantityField.getText().trim());
+                    BigDecimal price = new BigDecimal(priceField.getText().trim());
 
                     if (existingItem != null) {
                         existingItem.setItemName(name);

@@ -43,6 +43,32 @@ public class AppointmentDAO {
         }
     }
 
+    public void updateAppointment(Appointment appointment) throws SQLException {
+        String sql = "UPDATE appointments SET patient_id=?, doctor_id=?, appointment_date=?, status=?, notes=? WHERE id=?";
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, appointment.getPatientId());
+            pstmt.setInt(2, appointment.getDoctorId());
+            pstmt.setTimestamp(3, Timestamp.valueOf(appointment.getAppointmentDate()));
+            pstmt.setString(4, appointment.getStatus());
+            pstmt.setString(5, appointment.getNotes());
+            pstmt.setInt(6, appointment.getId());
+
+            pstmt.executeUpdate();
+        }
+    }
+
+    public void deleteAppointment(int id) throws SQLException {
+        String sql = "DELETE FROM appointments WHERE id=?";
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+        }
+    }
+
     public List<Appointment> getAllAppointments() throws SQLException {
         List<Appointment> appointments = new ArrayList<>();
         String sql = "SELECT * FROM appointments";
@@ -70,8 +96,8 @@ public class AppointmentDAO {
     public int getAppointmentCount() throws SQLException {
         String sql = "SELECT COUNT(*) FROM appointments";
         try (Connection conn = DBUtil.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
                 return rs.getInt(1);
             }

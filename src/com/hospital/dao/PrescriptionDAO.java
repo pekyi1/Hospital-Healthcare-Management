@@ -113,4 +113,134 @@ public class PrescriptionDAO {
         }
         return items;
     }
+
+    public List<Prescription> getAllPrescriptions() throws SQLException {
+        List<Prescription> prescriptions = new ArrayList<>();
+        String sql = "SELECT * FROM prescriptions ORDER BY prescription_date DESC";
+
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                Prescription p = new Prescription(
+                        rs.getInt("id"),
+                        rs.getInt("patient_id"),
+                        rs.getInt("doctor_id"),
+                        (Integer) rs.getObject("appointment_id"),
+                        rs.getString("notes"));
+                p.setPrescriptionDate(rs.getTimestamp("prescription_date"));
+                prescriptions.add(p);
+            }
+        }
+        return prescriptions;
+    }
+
+    public void updatePrescription(Prescription prescription) throws SQLException {
+        String sql = "UPDATE prescriptions SET patient_id=?, doctor_id=?, notes=? WHERE id=?";
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, prescription.getPatientId());
+            pstmt.setInt(2, prescription.getDoctorId());
+            pstmt.setString(3, prescription.getNotes());
+            pstmt.setInt(4, prescription.getId());
+            pstmt.executeUpdate();
+        }
+    }
+
+    public void deletePrescription(int id) throws SQLException {
+        // First delete prescription items (if any)
+        String deleteItemsSql = "DELETE FROM prescription_items WHERE prescription_id=?";
+        String deletePrescriptionSql = "DELETE FROM prescriptions WHERE id=?";
+
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteItemsSql)) {
+                    pstmt.setInt(1, id);
+                    pstmt.executeUpdate();
+                }
+                try (PreparedStatement pstmt = conn.prepareStatement(deletePrescriptionSql)) {
+                    pstmt.setInt(1, id);
+                    pstmt.executeUpdate();
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    public List<Prescription> getAllPrescriptionsWithItems() throws SQLException {
+        List<Prescription> prescriptions = new ArrayList<>();
+        String sql = "SELECT * FROM prescriptions ORDER BY prescription_date DESC";
+
+        try (Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                Prescription p = new Prescription(
+                        rs.getInt("id"),
+                        rs.getInt("patient_id"),
+                        rs.getInt("doctor_id"),
+                        (Integer) rs.getObject("appointment_id"),
+                        rs.getString("notes"));
+                p.setPrescriptionDate(rs.getTimestamp("prescription_date"));
+                p.setItems(getPrescriptionItems(p.getId(), conn));
+                prescriptions.add(p);
+            }
+        }
+        return prescriptions;
+    }
+
+    public void updatePrescriptionWithItems(Prescription prescription) throws SQLException {
+        String updateSql = "UPDATE prescriptions SET patient_id=?, doctor_id=?, notes=? WHERE id=?";
+        String deleteItemsSql = "DELETE FROM prescription_items WHERE prescription_id=?";
+        String insertItemSql = "INSERT INTO prescription_items (prescription_id, inventory_id, quantity, dosage_instructions) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = DBUtil.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // Update prescription header
+                try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
+                    pstmt.setInt(1, prescription.getPatientId());
+                    pstmt.setInt(2, prescription.getDoctorId());
+                    pstmt.setString(3, prescription.getNotes());
+                    pstmt.setInt(4, prescription.getId());
+                    pstmt.executeUpdate();
+                }
+
+                // Delete old items
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteItemsSql)) {
+                    pstmt.setInt(1, prescription.getId());
+                    pstmt.executeUpdate();
+                }
+
+                // Insert new items
+                if (prescription.getItems() != null) {
+                    try (PreparedStatement pstmt = conn.prepareStatement(insertItemSql)) {
+                        for (PrescriptionItem item : prescription.getItems()) {
+                            pstmt.setInt(1, prescription.getId());
+                            pstmt.setInt(2, item.getInventoryId());
+                            pstmt.setInt(3, item.getQuantity());
+                            pstmt.setString(4, item.getDosageInstructions());
+                            pstmt.addBatch();
+                        }
+                        pstmt.executeBatch();
+                    }
+                }
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
 }

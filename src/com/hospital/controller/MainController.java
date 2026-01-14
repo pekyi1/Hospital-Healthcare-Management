@@ -36,6 +36,8 @@ public class MainController {
     private Button btnPerformance;
     @FXML
     private Button btnFeedback;
+    @FXML
+    private Button btnDepartments;
 
     @FXML
     private Button backButton;
@@ -98,6 +100,11 @@ public class MainController {
     }
 
     @FXML
+    private void showDepartments() {
+        loadView("/com/hospital/view/DepartmentView.fxml", btnDepartments);
+    }
+
+    @FXML
     private void showInventory() {
         loadView("/com/hospital/view/InventoryView.fxml", btnInventory);
     }
@@ -141,7 +148,7 @@ public class MainController {
         // Reset all buttons
         List<Button> buttons = Arrays.asList(
                 btnDashboard, btnPatients, btnDoctors, btnAppointments,
-                btnInventory, btnPrescriptions, btnPerformance, btnFeedback);
+                btnDepartments, btnInventory, btnPrescriptions, btnPerformance, btnFeedback);
 
         for (Button btn : buttons) {
             if (btn != null) {
@@ -235,6 +242,7 @@ public class MainController {
         setSidebarButtonVisible(btnPatients, isAdmin || isDoctor);
         setSidebarButtonVisible(btnDoctors, isAdmin || isPatient); // Patient needs to find doctors
         setSidebarButtonVisible(btnAppointments, true); // Everyone needs appointments
+        setSidebarButtonVisible(btnDepartments, isAdmin);
         setSidebarButtonVisible(btnInventory, isAdmin);
         setSidebarButtonVisible(btnPrescriptions, true); // Everyone? (Patient views theirs)
         setSidebarButtonVisible(btnPerformance, isAdmin);
