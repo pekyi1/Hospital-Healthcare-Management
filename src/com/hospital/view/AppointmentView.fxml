@@ -2,56 +2,51 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.text.Font?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.hospital.controller.AppointmentController"
-      spacing="10.0">
-    <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
-    </padding>
+      spacing="20.0"
+      style="-fx-background-color: #f4f6f8; -fx-padding: 30;">
 
-    <Label text="Appointment Scheduling" styleClass="header-label">
-        <font>
-            <Font size="24.0"/>
-        </font>
-    </Label>
-    <TableView fx:id="appointmentTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="colId" text="ID" prefWidth="50.0"/>
-            <TableColumn fx:id="colPatientId" text="Patient ID" prefWidth="80.0"/>
-            <TableColumn fx:id="colDoctorId" text="Doctor ID" prefWidth="80.0"/>
-            <TableColumn fx:id="colDate" text="Date" prefWidth="150.0"/>
-            <TableColumn fx:id="colStatus" text="Status" prefWidth="100.0"/>
-            <TableColumn fx:id="colNotes" text="Notes" prefWidth="200.0"/>
-        </columns>
-    </TableView>
-
-    <TitledPane text="Schedule Appointment" collapsible="false">
-        <GridPane hgap="10" vgap="10">
-            <Label text="Patient ID:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-            <TextField fx:id="patientIdField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-            
-            <Label text="Doctor ID:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-            <TextField fx:id="doctorIdField" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-            
-            <Label text="Date (YYYY-MM-DDTHH:MM):" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-            <TextField fx:id="dateField" promptText="2023-10-27T10:00" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-            
-            <Label text="Notes:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-            <TextField fx:id="notesField" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
-            
-            <Label text="Status:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-            <ComboBox fx:id="statusComboBox" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        </GridPane>
-    </TitledPane>
-
-    <HBox spacing="10.0" alignment="CENTER_RIGHT">
-        <Button text="Schedule" onAction="#handleScheduleAppointment"/>
-        <Button text="Refresh" onAction="#handleRefresh"/>
+    <!-- Top Header -->
+    <HBox alignment="CENTER_LEFT">
+        <Label text="Appointments" styleClass="header-label"/>
     </HBox>
+
+    <!-- Main Card Container -->
+    <VBox styleClass="card" spacing="20.0" VBox.vgrow="ALWAYS">
+        
+        <!-- Controls Bar -->
+        <HBox spacing="15" alignment="CENTER_LEFT">
+            <!-- Search -->
+            <HBox alignment="CENTER_LEFT" styleClass="search-field" prefWidth="300">
+                <Label text="🔍" textFill="#9ca3af" style="-fx-font-size: 14px; -fx-padding: 0 5 0 0;"/>
+                <TextField fx:id="searchField" promptText="Search Appointment" HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
+            </HBox>
+            
+            <Region HBox.hgrow="ALWAYS"/>
+            
+            <Button text="+ Add Appointment" onAction="#handleAddAppointment" styleClass="button-primary"/>
+        </HBox>
+
+        <!-- Table -->
+        <TableView fx:id="appointmentTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colPatientName" text="Patient" prefWidth="150.0"/>
+                <TableColumn fx:id="colDoctorName" text="Doctor" prefWidth="150.0"/>
+                <TableColumn fx:id="colDate" text="Date" prefWidth="150.0"/>
+                <TableColumn fx:id="colStatus" text="Status" prefWidth="100.0"/>
+                <TableColumn fx:id="colNotes" text="Notes" prefWidth="200.0"/>
+                <TableColumn fx:id="colActions" text="Edit" prefWidth="120.0"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+        </TableView>
+
+    </VBox>
 
 </VBox>

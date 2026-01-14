@@ -1,9 +1,11 @@
 package com.hospital.service;
 
 import com.hospital.dao.AppointmentDAO;
+import com.hospital.dao.DepartmentDAO;
 import com.hospital.dao.DoctorDAO;
 import com.hospital.dao.PatientDAO;
 import com.hospital.model.Appointment;
+import com.hospital.model.Department;
 import com.hospital.model.Doctor;
 import com.hospital.model.Patient;
 import com.hospital.model.MedicalInventory;
@@ -26,6 +28,7 @@ public class HospitalService {
     private final InventoryDAO inventoryDAO;
     private final PrescriptionDAO prescriptionDAO;
     private final FeedbackDAO feedbackDAO;
+    private final DepartmentDAO departmentDAO;
 
     // In-Memory Cache
     private Map<Integer, Patient> patientCache = new HashMap<>();
@@ -39,6 +42,7 @@ public class HospitalService {
         this.inventoryDAO = new InventoryDAO();
         this.prescriptionDAO = new PrescriptionDAO();
         this.feedbackDAO = new FeedbackDAO();
+        this.departmentDAO = new DepartmentDAO();
     }
 
     // Performance Logger
@@ -68,6 +72,20 @@ public class HospitalService {
         return patients;
     }
 
+    public Patient getPatientById(int id) throws SQLException {
+        // Check cache first
+        if (patientCache.containsKey(id)) {
+            return patientCache.get(id);
+        }
+        long start = System.currentTimeMillis();
+        Patient patient = patientDAO.getPatientById(id);
+        if (patient != null) {
+            patientCache.put(id, patient);
+        }
+        logPerformance("getPatientById", start);
+        return patient;
+    }
+
     public List<Patient> searchPatients(String keyword) throws SQLException {
         long start = System.currentTimeMillis();
         // Here we could search cache if fully loaded, but usually search hits DB for
@@ -90,6 +108,27 @@ public class HospitalService {
         patientDAO.deletePatient(id);
         patientCache.remove(id);
         logPerformance("deletePatient", start);
+    }
+
+    public Patient getPatientByName(String firstName, String lastName) throws SQLException {
+        long start = System.currentTimeMillis();
+        Patient patient = patientDAO.getPatientByName(firstName, lastName);
+        logPerformance("getPatientByName", start);
+        return patient;
+    }
+
+    public java.util.Map<String, Integer> getPatientsPerDayOfWeek() throws SQLException {
+        long start = System.currentTimeMillis();
+        java.util.Map<String, Integer> stats = patientDAO.getPatientsPerDayOfWeek();
+        logPerformance("getPatientsPerDayOfWeek", start);
+        return stats;
+    }
+
+    public java.util.Map<String, Integer> getDoctorsPerDepartment() throws SQLException {
+        long start = System.currentTimeMillis();
+        java.util.Map<String, Integer> stats = doctorDAO.getDoctorsPerDepartment();
+        logPerformance("getDoctorsPerDepartment", start);
+        return stats;
     }
 
     /**
@@ -144,6 +183,20 @@ public class HospitalService {
         return doctors;
     }
 
+    public Doctor getDoctorById(int id) throws SQLException {
+        // Check cache first
+        if (doctorCache.containsKey(id)) {
+            return doctorCache.get(id);
+        }
+        long start = System.currentTimeMillis();
+        Doctor doctor = doctorDAO.getDoctorById(id);
+        if (doctor != null) {
+            doctorCache.put(id, doctor);
+        }
+        logPerformance("getDoctorById", start);
+        return doctor;
+    }
+
     public void updateDoctor(Doctor doctor) throws SQLException {
         long start = System.currentTimeMillis();
         doctorDAO.updateDoctor(doctor);
@@ -158,6 +211,13 @@ public class HospitalService {
         logPerformance("deleteDoctor", start);
     }
 
+    public Doctor getDoctorByName(String firstName, String lastName) throws SQLException {
+        long start = System.currentTimeMillis();
+        Doctor doctor = doctorDAO.getDoctorByName(firstName, lastName);
+        logPerformance("getDoctorByName", start);
+        return doctor;
+    }
+
     // Appointment Services
     public void scheduleAppointment(Appointment appointment) throws SQLException {
         long start = System.currentTimeMillis();
@@ -170,6 +230,18 @@ public class HospitalService {
         List<Appointment> appointments = appointmentDAO.getAllAppointments();
         logPerformance("getAllAppointments", start);
         return appointments;
+    }
+
+    public void updateAppointment(Appointment appointment) throws SQLException {
+        long start = System.currentTimeMillis();
+        appointmentDAO.updateAppointment(appointment);
+        logPerformance("updateAppointment", start);
+    }
+
+    public void cancelAppointment(int id) throws SQLException {
+        long start = System.currentTimeMillis();
+        appointmentDAO.deleteAppointment(id);
+        logPerformance("cancelAppointment", start);
     }
 
     // Inventory Services
@@ -198,6 +270,53 @@ public class HospitalService {
         logPerformance("updateInventoryItem", start);
     }
 
+    public void deleteInventoryItem(int id) throws SQLException {
+        long start = System.currentTimeMillis();
+        inventoryDAO.deleteItem(id);
+        inventoryCache.remove(id);
+        logPerformance("deleteInventoryItem", start);
+    }
+
+    // Department Services
+    public List<Department> getAllDepartments() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Department> departments = departmentDAO.getAllDepartments();
+        logPerformance("getAllDepartments", start);
+        return departments;
+    }
+
+    public Department getDepartmentById(int id) throws SQLException {
+        long start = System.currentTimeMillis();
+        Department department = departmentDAO.getDepartmentById(id);
+        logPerformance("getDepartmentById", start);
+        return department;
+    }
+
+    public Department getDepartmentByName(String name) throws SQLException {
+        long start = System.currentTimeMillis();
+        Department department = departmentDAO.getDepartmentByName(name);
+        logPerformance("getDepartmentByName", start);
+        return department;
+    }
+
+    public void addDepartment(Department department) throws SQLException {
+        long start = System.currentTimeMillis();
+        departmentDAO.addDepartment(department);
+        logPerformance("addDepartment", start);
+    }
+
+    public void updateDepartment(Department department) throws SQLException {
+        long start = System.currentTimeMillis();
+        departmentDAO.updateDepartment(department);
+        logPerformance("updateDepartment", start);
+    }
+
+    public void deleteDepartment(int id) throws SQLException {
+        long start = System.currentTimeMillis();
+        departmentDAO.deleteDepartment(id);
+        logPerformance("deleteDepartment", start);
+    }
+
     // Prescription Services
     public void prescribeMedication(Prescription prescription) throws SQLException {
         long start = System.currentTimeMillis();
@@ -212,11 +331,50 @@ public class HospitalService {
         return list;
     }
 
+    public List<Prescription> getAllPrescriptions() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Prescription> list = prescriptionDAO.getAllPrescriptions();
+        logPerformance("getAllPrescriptions", start);
+        return list;
+    }
+
+    public void updatePrescription(Prescription prescription) throws SQLException {
+        long start = System.currentTimeMillis();
+        prescriptionDAO.updatePrescription(prescription);
+        logPerformance("updatePrescription", start);
+    }
+
+    public void deletePrescription(int id) throws SQLException {
+        long start = System.currentTimeMillis();
+        prescriptionDAO.deletePrescription(id);
+        logPerformance("deletePrescription", start);
+    }
+
+    public List<Prescription> getAllPrescriptionsWithItems() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<Prescription> list = prescriptionDAO.getAllPrescriptionsWithItems();
+        logPerformance("getAllPrescriptionsWithItems", start);
+        return list;
+    }
+
+    public void updatePrescriptionWithItems(Prescription prescription) throws SQLException {
+        long start = System.currentTimeMillis();
+        prescriptionDAO.updatePrescriptionWithItems(prescription);
+        logPerformance("updatePrescriptionWithItems", start);
+    }
+
     // Feedback Services
     public void submitFeedback(PatientFeedback feedback) throws SQLException {
         long start = System.currentTimeMillis();
         feedbackDAO.addFeedback(feedback);
         logPerformance("submitFeedback", start);
+    }
+
+    public List<PatientFeedback> getAllFeedback() throws SQLException {
+        long start = System.currentTimeMillis();
+        List<PatientFeedback> list = feedbackDAO.getAllFeedback();
+        logPerformance("getAllFeedback", start);
+        return list;
     }
 
     // Dashboard Statistics

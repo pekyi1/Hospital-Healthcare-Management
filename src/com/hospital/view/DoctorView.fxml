@@ -14,8 +14,6 @@
     <!-- Top Header -->
     <HBox alignment="CENTER_LEFT">
         <Label text="Doctors" styleClass="header-label"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button text="View all →" style="-fx-background-color: transparent; -fx-text-fill: #3498db; -fx-cursor: hand; -fx-font-weight: bold;"/>
     </HBox>
 
     <!-- Main Card Container -->
@@ -28,26 +26,25 @@
                 <Label text="🔍" textFill="#9ca3af" style="-fx-font-size: 14px; -fx-padding: 0 5 0 0;"/>
                 <TextField fx:id="searchField" promptText="Search Doctor" HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
             </HBox>
-
-            <Button text="Filters" styleClass="action-button"/> 
-            <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button"/>
             
             <Region HBox.hgrow="ALWAYS"/>
             
+            <Button text="🔄 Refresh" onAction="#handleRefresh" styleClass="button-secondary"/>
             <Button text="+ Add Doctor" onAction="#handleAddDoctor" styleClass="button-primary"/>
         </HBox>
 
         <!-- Table -->
         <TableView fx:id="doctorTable" VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="colSelect" prefWidth="40" resizable="false"/>
                 <TableColumn fx:id="colId" text="ID" prefWidth="50.0"/>
                 <TableColumn fx:id="colFirstName" text="First Name" prefWidth="100.0"/>
                 <TableColumn fx:id="colLastName" text="Last Name" prefWidth="100.0"/>
-                <TableColumn fx:id="colSpecialization" text="Specialization" prefWidth="150.0"/>
+                <TableColumn fx:id="colSpecialization" text="Specialization" prefWidth="120.0"/>
+                <TableColumn fx:id="colDepartment" text="Department" prefWidth="100.0"/>
                 <TableColumn fx:id="colEmail" text="Email" prefWidth="150.0"/>
                 <TableColumn fx:id="colPhone" text="Phone" prefWidth="100.0"/>
-                <TableColumn text="Actions" prefWidth="60.0"/>
+                <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="140.0"/>
+                <TableColumn fx:id="colActions" text="Edit" prefWidth="100.0"/>
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
@@ -55,33 +52,5 @@
         </TableView>
 
     </VBox>
-
-    <TitledPane text="Quick Add / Edit Doctor" expanded="false" style="-fx-background-color: transparent;">
-        <GridPane hgap="15" vgap="15" style="-fx-padding: 15;">
-            <Label text="First Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-            <TextField fx:id="firstNameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-            
-            <Label text="Last Name:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-            <TextField fx:id="lastNameField" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-            
-            <Label text="Specialization:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-            <TextField fx:id="specializationField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-            
-            <Label text="Department ID:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-            <TextField fx:id="deptIdField" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
-            
-            <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-            <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-            
-            <Label text="Phone:" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
-            <TextField fx:id="phoneField" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
-            
-            <HBox spacing="10" GridPane.columnIndex="3" GridPane.rowIndex="3" alignment="BOTTOM_RIGHT">
-                <Button text="Save" onAction="#handleUpdateDoctor" style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
-                <Button text="Delete" onAction="#handleDeleteDoctor" style="-fx-background-color: #e74c3c; -fx-text-fill: white;"/>
-                <Button text="Clear" onAction="#handleClear"/>
-            </HBox>
-        </GridPane>
-    </TitledPane>
 
 </VBox>

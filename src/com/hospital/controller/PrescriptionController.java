@@ -1,139 +1,399 @@
 package com.hospital.controller;
 
-import com.hospital.model.Prescription;
-import com.hospital.model.PrescriptionItem;
-import com.hospital.model.MedicalInventory;
+import com.hospital.model.*;
 import com.hospital.service.HospitalService;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
+import javafx.stage.Stage;
+import javafx.stage.Modality;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+/**
+ * View model combining Prescription header with its first item for display
+ */
+class PrescriptionDisplayItem {
+    private int prescriptionId;
+    private int patientId;
+    private int doctorId;
+    private Timestamp prescriptionDate;
+    private int inventoryId;
+    private String medicineName;
+    private int quantity;
+    private String dosageInstructions;
+
+    public PrescriptionDisplayItem(Prescription p, PrescriptionItem item) {
+        this.prescriptionId = p.getId();
+        this.patientId = p.getPatientId();
+        this.doctorId = p.getDoctorId();
+        this.prescriptionDate = p.getPrescriptionDate();
+        if (item != null) {
+            this.inventoryId = item.getInventoryId();
+            this.medicineName = item.getMedicineName();
+            this.quantity = item.getQuantity();
+            this.dosageInstructions = item.getDosageInstructions();
+        }
+    }
+
+    public int getPrescriptionId() {
+        return prescriptionId;
+    }
+
+    public int getPatientId() {
+        return patientId;
+    }
+
+    public int getDoctorId() {
+        return doctorId;
+    }
+
+    public Timestamp getPrescriptionDate() {
+        return prescriptionDate;
+    }
+
+    public int getInventoryId() {
+        return inventoryId;
+    }
+
+    public String getMedicineName() {
+        return medicineName != null ? medicineName : "-";
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public String getDosageInstructions() {
+        return dosageInstructions != null ? dosageInstructions : "-";
+    }
+}
 
 public class PrescriptionController {
 
     @FXML
-    private TableView<Prescription> prescriptionTable;
+    private TextField searchField;
     @FXML
-    private TableColumn<Prescription, Integer> idColumn;
-    @FXML
-    private TableColumn<Prescription, Integer> patientIdColumn;
-    @FXML
-    private TableColumn<Prescription, Integer> doctorIdColumn;
-    @FXML
-    private TableColumn<Prescription, String> dateColumn;
-    @FXML
-    private TableColumn<Prescription, String> notesColumn;
+    private TableView<PrescriptionDisplayItem> prescriptionTable;
 
     @FXML
-    private TextField searchPatientIdField;
+    private TableColumn<PrescriptionDisplayItem, String> colPatientName;
+    @FXML
+    private TableColumn<PrescriptionDisplayItem, String> colDoctorName;
+    @FXML
+    private TableColumn<PrescriptionDisplayItem, String> colMedicine;
+    @FXML
+    private TableColumn<PrescriptionDisplayItem, Integer> colQuantity;
+    @FXML
+    private TableColumn<PrescriptionDisplayItem, String> colDosage;
+    @FXML
+    private TableColumn<PrescriptionDisplayItem, String> colDate;
+    @FXML
+    private TableColumn<PrescriptionDisplayItem, Void> colActions;
 
     private HospitalService hospitalService;
-    private ObservableList<Prescription> prescriptionList = FXCollections.observableArrayList();
+    private ObservableList<PrescriptionDisplayItem> prescriptionList = FXCollections.observableArrayList();
 
-    public PrescriptionController() {
-        this.hospitalService = new HospitalService();
+    // Cache for patient and doctor names
+    private Map<Integer, String> patientNameCache = new HashMap<>();
+    private Map<Integer, String> doctorNameCache = new HashMap<>();
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+
+    public void initialize() {
+        hospitalService = new HospitalService();
+        setupTableColumns();
+        setupActionColumn();
+        loadPrescriptions();
     }
 
-    @FXML
-    public void initialize() {
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        patientIdColumn.setCellValueFactory(new PropertyValueFactory<>("patientId"));
-        doctorIdColumn.setCellValueFactory(new PropertyValueFactory<>("doctorId"));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<>("prescriptionDate"));
-        notesColumn.setCellValueFactory(new PropertyValueFactory<>("notes"));
+    private void setupTableColumns() {
+        // Patient name
+        colPatientName.setCellValueFactory(cellData -> {
+            int patientId = cellData.getValue().getPatientId();
+            String name = getPatientName(patientId);
+            return new SimpleStringProperty(name);
+        });
+
+        // Doctor name
+        colDoctorName.setCellValueFactory(cellData -> {
+            int doctorId = cellData.getValue().getDoctorId();
+            String name = getDoctorName(doctorId);
+            return new SimpleStringProperty(name);
+        });
+
+        // Medicine name
+        colMedicine.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getMedicineName()));
+
+        // Quantity
+        colQuantity.setCellValueFactory(
+                cellData -> new SimpleIntegerProperty(cellData.getValue().getQuantity()).asObject());
+
+        // Dosage instructions
+        colDosage
+                .setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDosageInstructions()));
+
+        // Date
+        colDate.setCellValueFactory(cellData -> {
+            Timestamp date = cellData.getValue().getPrescriptionDate();
+            if (date != null) {
+                return new SimpleStringProperty(date.toLocalDateTime().format(DATE_FORMATTER));
+            }
+            return new SimpleStringProperty("-");
+        });
+    }
+
+    private String getPatientName(int patientId) {
+        if (patientId == 0)
+            return "-";
+        if (patientNameCache.containsKey(patientId)) {
+            return patientNameCache.get(patientId);
+        }
+        try {
+            Patient patient = hospitalService.getPatientById(patientId);
+            if (patient != null) {
+                String name = patient.getFirstName() + " " + patient.getLastName();
+                patientNameCache.put(patientId, name);
+                return name;
+            }
+        } catch (SQLException e) {
+            // Return ID as fallback
+        }
+        return "Patient #" + patientId;
+    }
+
+    private String getDoctorName(int doctorId) {
+        if (doctorId == 0)
+            return "-";
+        if (doctorNameCache.containsKey(doctorId)) {
+            return doctorNameCache.get(doctorId);
+        }
+        try {
+            Doctor doctor = hospitalService.getDoctorById(doctorId);
+            if (doctor != null) {
+                String name = "Dr. " + doctor.getFirstName() + " " + doctor.getLastName();
+                doctorNameCache.put(doctorId, name);
+                return name;
+            }
+        } catch (SQLException e) {
+            // Return ID as fallback
+        }
+        return "Doctor #" + doctorId;
+    }
+
+    private void setupActionColumn() {
+        if (colActions != null) {
+            colActions.setCellFactory(param -> new TableCell<>() {
+                private final Button editBtn = new Button("Edit");
+                private final Button deleteBtn = new Button("Del");
+                private final HBox pane = new HBox(5, editBtn, deleteBtn);
+
+                {
+                    pane.setAlignment(Pos.CENTER);
+                    editBtn.setStyle(
+                            "-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px; -fx-padding: 3 8;");
+                    deleteBtn.setStyle(
+                            "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px; -fx-padding: 3 8;");
+
+                    editBtn.setOnAction(event -> {
+                        PrescriptionDisplayItem item = getTableView().getItems().get(getIndex());
+                        handleEditPrescription(item);
+                    });
+
+                    deleteBtn.setOnAction(event -> {
+                        PrescriptionDisplayItem item = getTableView().getItems().get(getIndex());
+                        handleDeletePrescription(item);
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(pane);
+                    }
+                }
+            });
+        }
+    }
+
+    private void loadPrescriptions() {
+        // Clear cache
+        patientNameCache.clear();
+        doctorNameCache.clear();
+        prescriptionList.clear();
+
+        try {
+            List<Prescription> prescriptions = hospitalService.getAllPrescriptionsWithItems();
+            for (Prescription p : prescriptions) {
+                if (p.getItems() != null && !p.getItems().isEmpty()) {
+                    // Create a display row for each item in the prescription
+                    for (PrescriptionItem item : p.getItems()) {
+                        prescriptionList.add(new PrescriptionDisplayItem(p, item));
+                    }
+                } else {
+                    // Prescription with no items
+                    prescriptionList.add(new PrescriptionDisplayItem(p, null));
+                }
+            }
+            prescriptionTable.setItems(prescriptionList);
+        } catch (SQLException e) {
+            showAlert("Error", "Failed to load prescriptions: " + e.getMessage());
+        }
     }
 
     @FXML
     private void handleSearch() {
-        String patientIdText = searchPatientIdField.getText();
-        if (patientIdText == null || patientIdText.trim().isEmpty()) {
-            showAlert("Warning", "Please enter a Patient ID");
+        String keyword = searchField.getText();
+        if (keyword == null || keyword.trim().isEmpty()) {
+            loadPrescriptions();
             return;
         }
 
+        String lowerKeyword = keyword.toLowerCase().trim();
+
         try {
-            int patientId = Integer.parseInt(patientIdText);
-            List<Prescription> results = hospitalService.getPatientPrescriptions(patientId);
-            prescriptionList.setAll(results);
+            List<Prescription> allPrescriptions = hospitalService.getAllPrescriptionsWithItems();
+            prescriptionList.clear();
+
+            for (Prescription p : allPrescriptions) {
+                String patientName = getPatientName(p.getPatientId()).toLowerCase();
+                String doctorName = getDoctorName(p.getDoctorId()).toLowerCase();
+
+                if (p.getItems() != null && !p.getItems().isEmpty()) {
+                    for (PrescriptionItem item : p.getItems()) {
+                        String medicineName = item.getMedicineName() != null ? item.getMedicineName().toLowerCase()
+                                : "";
+                        String dosage = item.getDosageInstructions() != null
+                                ? item.getDosageInstructions().toLowerCase()
+                                : "";
+
+                        if (patientName.contains(lowerKeyword) ||
+                                doctorName.contains(lowerKeyword) ||
+                                medicineName.contains(lowerKeyword) ||
+                                dosage.contains(lowerKeyword)) {
+                            prescriptionList.add(new PrescriptionDisplayItem(p, item));
+                        }
+                    }
+                }
+            }
+
             prescriptionTable.setItems(prescriptionList);
-        } catch (NumberFormatException e) {
-            showAlert("Error", "Patient ID must be a number");
         } catch (SQLException e) {
-            showAlert("Error", "Database error: " + e.getMessage());
+            showAlert("Error", "Failed to search prescriptions: " + e.getMessage());
         }
     }
 
     @FXML
     private void handleAddPrescription() {
-        // Simple dialog to add a prescription header
-        Dialog<Prescription> dialog = new Dialog<>();
-        dialog.setTitle("New Prescription");
-        dialog.setHeaderText("Enter Prescription Details");
+        openPrescriptionDialog(null);
+    }
 
-        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+    private void handleEditPrescription(PrescriptionDisplayItem displayItem) {
+        // For editing, we pass the prescription ID so the form can load it
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/hospital/view/PrescriptionFormDialog.fxml"));
+            Parent root = loader.load();
 
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
+            PrescriptionFormDialogController controller = loader.getController();
 
-        TextField patientIdField = new TextField();
-        patientIdField.setPromptText("Patient ID");
-        TextField doctorIdField = new TextField();
-        doctorIdField.setPromptText("Doctor ID");
-        TextArea notesArea = new TextArea();
-        notesArea.setPromptText("Notes");
-        notesArea.setPrefRowCount(3);
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Edit Prescription");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(prescriptionTable.getScene().getWindow());
+            dialogStage.setScene(new Scene(root));
 
-        grid.add(new Label("Patient ID:"), 0, 0);
-        grid.add(patientIdField, 1, 0);
-        grid.add(new Label("Doctor ID:"), 0, 1);
-        grid.add(doctorIdField, 1, 1);
-        grid.add(new Label("Notes:"), 0, 2);
-        grid.add(notesArea, 1, 2);
+            controller.setDialogStage(dialogStage);
+            controller.setPrescriptionForEdit(displayItem.getPrescriptionId(), displayItem.getInventoryId());
 
-        dialog.getDialogPane().setContent(grid);
+            dialogStage.showAndWait();
 
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == saveButtonType) {
-                try {
-                    int pid = Integer.parseInt(patientIdField.getText());
-                    int did = Integer.parseInt(doctorIdField.getText());
-                    String notes = notesArea.getText();
-                    return new Prescription(0, pid, did, null, notes);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
+            if (controller.isSaveSuccessful()) {
+                loadPrescriptions();
             }
-            return null;
-        });
+        } catch (IOException e) {
+            showAlert("Error", "Failed to load prescription form: " + e.getMessage());
+        }
+    }
 
-        Optional<Prescription> result = dialog.showAndWait();
-        result.ifPresent(p -> {
+    private void openPrescriptionDialog(Prescription prescription) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/hospital/view/PrescriptionFormDialog.fxml"));
+            Parent root = loader.load();
+
+            PrescriptionFormDialogController controller = loader.getController();
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Add Prescription");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(prescriptionTable.getScene().getWindow());
+            dialogStage.setScene(new Scene(root));
+
+            controller.setDialogStage(dialogStage);
+            controller.setPrescription(null);
+
+            dialogStage.showAndWait();
+
+            if (controller.isSaveSuccessful()) {
+                loadPrescriptions();
+            }
+        } catch (IOException e) {
+            showAlert("Error", "Failed to load prescription form: " + e.getMessage());
+        }
+    }
+
+    private void handleDeletePrescription(PrescriptionDisplayItem displayItem) {
+        String patientName = getPatientName(displayItem.getPatientId());
+
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Delete");
+        confirmAlert.setHeaderText("Delete Prescription");
+        confirmAlert.setContentText("Are you sure you want to delete the prescription for " + patientName +
+                " (" + displayItem.getMedicineName() + ")?");
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                // For simplicity in this quick implementation, we add one dummy item if none
-                // selected
-                // In a real app, we'd have a second step to add items
-                // We'll proceed with just the header for now to satisfy the requirement of
-                // "creating" one
-                hospitalService.prescribeMedication(p);
-                showAlert("Success", "Prescription added!");
-                handleSearch(); // Refresh if same patient
+                hospitalService.deletePrescription(displayItem.getPrescriptionId());
+                loadPrescriptions();
+                showAlert("Success", "Prescription deleted successfully.");
             } catch (SQLException e) {
-                showAlert("Error", "Failed to add prescription: " + e.getMessage());
+                showAlert("Error", "Failed to delete prescription: " + e.getMessage());
             }
-        });
+        }
+    }
+
+    @FXML
+    private void handleClear() {
+        if (searchField != null) {
+            searchField.clear();
+        }
+        prescriptionTable.getSelectionModel().clearSelection();
+        loadPrescriptions();
+    }
+
+    @FXML
+    private void handleRefresh() {
+        loadPrescriptions();
     }
 
     private void showAlert(String title, String content) {

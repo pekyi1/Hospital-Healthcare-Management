@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hospital.controller.AppointmentFormDialogController"
+      spacing="15"
+      style="-fx-background-color: white; -fx-padding: 20;">
+
+    <!-- Title -->
+    <Label fx:id="titleLabel" text="Add Appointment" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+    <!-- Form Fields -->
+    <GridPane hgap="15" vgap="15">
+        <Label text="Patient First Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="patientFirstNameField" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        
+        <Label text="Patient Last Name:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextField fx:id="patientLastNameField" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        
+        <Label text="Doctor First Name:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="doctorFirstNameField" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        
+        <Label text="Doctor Last Name:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <TextField fx:id="doctorLastNameField" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        
+        <Label text="Date:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <DatePicker fx:id="datePicker" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        
+        <Label text="Time (HH:MM):" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <TextField fx:id="timeField" promptText="10:00" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+        
+        <Label text="Status:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+        <ComboBox fx:id="statusComboBox" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+        
+        <Label text="Notes:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+        <TextArea fx:id="notesField" prefWidth="200" prefHeight="60" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+    </GridPane>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#handleCancel" style="-fx-background-color: #95a5a6; -fx-text-fill: white;"/>
+        <Button text="Save" onAction="#handleSave" style="-fx-background-color: #3498db; -fx-text-fill: white;"/>
+    </HBox>
+
+</VBox>

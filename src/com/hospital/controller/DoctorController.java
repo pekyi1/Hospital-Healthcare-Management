@@ -1,24 +1,38 @@
 package com.hospital.controller;
 
+import com.hospital.model.Department;
 import com.hospital.model.Doctor;
 import com.hospital.service.HospitalService;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TextField;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
+import javafx.stage.Stage;
+import javafx.stage.Modality;
 
+import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class DoctorController {
 
     @FXML
+    private TextField searchField;
+    @FXML
     private TableView<Doctor> doctorTable;
+
     @FXML
     private TableColumn<Doctor, Integer> colId;
     @FXML
@@ -28,40 +42,27 @@ public class DoctorController {
     @FXML
     private TableColumn<Doctor, String> colSpecialization;
     @FXML
+    private TableColumn<Doctor, String> colDepartment;
+    @FXML
     private TableColumn<Doctor, String> colEmail;
     @FXML
     private TableColumn<Doctor, String> colPhone;
     @FXML
-    private TableColumn<Doctor, Void> colSelect; // For styling
+    private TableColumn<Doctor, String> colCreatedAt;
     @FXML
-    private TextField searchField; // Added for new UI
-
-    @FXML
-    private TextField firstNameField;
-    @FXML
-    private TextField lastNameField;
-    @FXML
-    private TextField specializationField;
-    @FXML
-    private TextField deptIdField;
-    @FXML
-    private TextField emailField;
-    @FXML
-    private TextField phoneField;
+    private TableColumn<Doctor, Void> colActions;
 
     private HospitalService hospitalService;
     private ObservableList<Doctor> doctorList = FXCollections.observableArrayList();
 
+    // Cache for department names
+    private Map<Integer, String> departmentNameCache = new HashMap<>();
+
     public void initialize() {
         hospitalService = new HospitalService();
         setupTableColumns();
+        setupActionColumn();
         loadDoctors();
-
-        doctorTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                populateForm(newSelection);
-            }
-        });
     }
 
     private void setupTableColumns() {
@@ -72,20 +73,94 @@ public class DoctorController {
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
 
-        // Add Checkbox implementation for colSelect if strictly needed,
-        // ignoring for now to keep focus on layout stability.
+        // Custom cell value factory for department name
+        colDepartment.setCellValueFactory(cellData -> {
+            int deptId = cellData.getValue().getDepartmentId();
+            String name = getDepartmentName(deptId);
+            return new SimpleStringProperty(name);
+        });
+
+        // Custom cell value factory for created at date
+        colCreatedAt.setCellValueFactory(cellData -> {
+            LocalDateTime createdAt = cellData.getValue().getCreatedAt();
+            if (createdAt == null) {
+                return new SimpleStringProperty("-");
+            }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            return new SimpleStringProperty(createdAt.format(formatter));
+        });
     }
 
-    private void populateForm(Doctor d) {
-        firstNameField.setText(d.getFirstName());
-        lastNameField.setText(d.getLastName());
-        specializationField.setText(d.getSpecialization());
-        deptIdField.setText(String.valueOf(d.getDepartmentId()));
-        emailField.setText(d.getEmail());
-        phoneField.setText(d.getPhone());
+    private String getDepartmentName(int deptId) {
+        if (deptId == 0)
+            return "-";
+        if (departmentNameCache.containsKey(deptId)) {
+            return departmentNameCache.get(deptId);
+        }
+        try {
+            Department dept = hospitalService.getDepartmentById(deptId);
+            if (dept != null) {
+                departmentNameCache.put(deptId, dept.getName());
+                return dept.getName();
+            }
+        } catch (SQLException e) {
+            // Return ID as fallback
+        }
+        return "Dept #" + deptId;
+    }
+
+    private void setupActionColumn() {
+        TableColumn<Doctor, Void> actionsCol = colActions;
+        if (actionsCol == null) {
+            for (TableColumn<Doctor, ?> col : doctorTable.getColumns()) {
+                if ("Edit".equals(col.getText()) || "Actions".equals(col.getText())) {
+                    actionsCol = (TableColumn<Doctor, Void>) col;
+                    break;
+                }
+            }
+        }
+
+        if (actionsCol != null) {
+            actionsCol.setCellFactory(param -> new TableCell<>() {
+                private final Button editBtn = new Button("Edit");
+                private final Button deleteBtn = new Button("Del");
+                private final HBox pane = new HBox(5, editBtn, deleteBtn);
+
+                {
+                    pane.setAlignment(Pos.CENTER);
+                    editBtn.setStyle(
+                            "-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px; -fx-padding: 3 8;");
+                    deleteBtn.setStyle(
+                            "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px; -fx-padding: 3 8;");
+
+                    editBtn.setOnAction(event -> {
+                        Doctor doctor = getTableView().getItems().get(getIndex());
+                        handleEditDoctor(doctor);
+                    });
+
+                    deleteBtn.setOnAction(event -> {
+                        Doctor doctor = getTableView().getItems().get(getIndex());
+                        handleDeleteDoctor(doctor);
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(pane);
+                    }
+                }
+            });
+        }
     }
 
     private void loadDoctors() {
+        // Clear cache to refresh department names
+        departmentNameCache.clear();
+
         try {
             List<Doctor> doctors = hospitalService.getAllDoctors();
             doctorList.setAll(doctors);
@@ -97,123 +172,98 @@ public class DoctorController {
 
     @FXML
     private void handleSearch() {
-        // Stub for search functionality
         String keyword = searchField.getText();
-        if (keyword == null || keyword.isEmpty()) {
+        if (keyword == null || keyword.trim().isEmpty()) {
             loadDoctors();
             return;
         }
-        // Ideally: hospitalService.searchDoctors(keyword);
-        // For now, reload all or filter logically if service supports it.
-        // Alerting to avoid crash if service missing method.
-        // showAlert("Info", "Search not yet implemented in backend.");
-        // Re-load to ensure table is populated.
-        loadDoctors();
+
+        String lowerKeyword = keyword.toLowerCase().trim();
+
+        try {
+            List<Doctor> allDoctors = hospitalService.getAllDoctors();
+            List<Doctor> filtered = allDoctors.stream()
+                    .filter(d -> d.getFirstName().toLowerCase().contains(lowerKeyword) ||
+                            d.getLastName().toLowerCase().contains(lowerKeyword) ||
+                            (d.getSpecialization() != null
+                                    && d.getSpecialization().toLowerCase().contains(lowerKeyword))
+                            ||
+                            (d.getEmail() != null && d.getEmail().toLowerCase().contains(lowerKeyword)))
+                    .toList();
+
+            doctorList.setAll(filtered);
+            doctorTable.setItems(doctorList);
+        } catch (SQLException e) {
+            showAlert("Error", "Failed to search doctors: " + e.getMessage());
+        }
     }
 
     @FXML
     private void handleAddDoctor() {
-        if (!validateInput())
-            return;
+        openDoctorDialog(null);
+    }
 
-        Doctor doctor = new Doctor();
-        doctor.setFirstName(firstNameField.getText());
-        doctor.setLastName(lastNameField.getText());
-        doctor.setSpecialization(specializationField.getText());
-        try {
-            doctor.setDepartmentId(Integer.parseInt(deptIdField.getText()));
-        } catch (NumberFormatException e) {
-            showAlert("Error", "Department ID must be a number.");
-            return;
-        }
-        doctor.setEmail(emailField.getText());
-        doctor.setPhone(phoneField.getText());
+    private void handleEditDoctor(Doctor doctor) {
+        openDoctorDialog(doctor);
+    }
 
+    private void openDoctorDialog(Doctor doctor) {
         try {
-            hospitalService.registerDoctor(doctor);
-            loadDoctors();
-            handleClear();
-            showAlert("Success", "Doctor added successfully.");
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to add doctor: " + e.getMessage());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/hospital/view/DoctorFormDialog.fxml"));
+            Parent root = loader.load();
+
+            DoctorFormDialogController controller = loader.getController();
+
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle(doctor == null ? "Add Doctor" : "Edit Doctor");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(doctorTable.getScene().getWindow());
+            dialogStage.setScene(new Scene(root));
+
+            controller.setDialogStage(dialogStage);
+            controller.setDoctor(doctor);
+
+            dialogStage.showAndWait();
+
+            if (controller.isSaveSuccessful()) {
+                loadDoctors();
+            }
+        } catch (IOException e) {
+            showAlert("Error", "Failed to load doctor form: " + e.getMessage());
         }
     }
 
-    @FXML
-    private void handleUpdateDoctor() {
-        Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("Warning", "Please select a doctor to update.");
-            return;
-        }
-        if (!validateInput())
-            return;
+    private void handleDeleteDoctor(Doctor doctor) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Delete");
+        confirmAlert.setHeaderText("Delete Doctor");
+        confirmAlert.setContentText("Are you sure you want to delete Dr. " +
+                doctor.getFirstName() + " " + doctor.getLastName() + "?");
 
-        selected.setFirstName(firstNameField.getText());
-        selected.setLastName(lastNameField.getText());
-        selected.setSpecialization(specializationField.getText());
-        try {
-            selected.setDepartmentId(Integer.parseInt(deptIdField.getText()));
-        } catch (NumberFormatException e) {
-            showAlert("Error", "Department ID must be a number.");
-            return;
-        }
-        selected.setEmail(emailField.getText());
-        selected.setPhone(phoneField.getText());
-
-        try {
-            hospitalService.updateDoctor(selected);
-            loadDoctors();
-            handleClear();
-            showAlert("Success", "Doctor updated successfully.");
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to update doctor: " + e.getMessage());
-        }
-    }
-
-    @FXML
-    private void handleDeleteDoctor() {
-        Doctor selected = doctorTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("Warning", "Please select a doctor to delete.");
-            return;
-        }
-
-        try {
-            hospitalService.deleteDoctor(selected.getId());
-            doctorList.remove(selected);
-            handleClear();
-            showAlert("Success", "Doctor deleted successfully.");
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to delete doctor: " + e.getMessage());
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                hospitalService.deleteDoctor(doctor.getId());
+                loadDoctors();
+                showAlert("Success", "Doctor deleted successfully.");
+            } catch (SQLException e) {
+                showAlert("Error", "Failed to delete doctor: " + e.getMessage());
+            }
         }
     }
 
     @FXML
     private void handleClear() {
-        firstNameField.clear();
-        lastNameField.clear();
-        specializationField.clear();
-        deptIdField.clear();
-        emailField.clear();
-        phoneField.clear();
-        doctorTable.getSelectionModel().clearSelection();
-        if (searchField != null)
+        if (searchField != null) {
             searchField.clear();
+        }
+        doctorTable.getSelectionModel().clearSelection();
+        loadDoctors();
     }
 
     @FXML
     private void handleRefresh() {
         loadDoctors();
-    }
-
-    private boolean validateInput() {
-        if (firstNameField.getText().isEmpty() || lastNameField.getText().isEmpty() ||
-                specializationField.getText().isEmpty() || deptIdField.getText().isEmpty()) {
-            showAlert("Error", "Please fill in all required fields.");
-            return false;
-        }
-        return true;
     }
 
     private void showAlert(String title, String content) {

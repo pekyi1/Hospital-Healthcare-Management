@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hospital.controller.PrescriptionFormDialogController"
+      spacing="15"
+      style="-fx-background-color: white; -fx-padding: 20;">
+
+    <!-- Title -->
+    <Label fx:id="titleLabel" text="Add Prescription" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+    <!-- Form Fields -->
+    <GridPane hgap="15" vgap="15">
+        <Label text="Patient First Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="patientFirstNameField" promptText="e.g., John" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        
+        <Label text="Patient Last Name:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextField fx:id="patientLastNameField" promptText="e.g., Doe" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        
+        <Label text="Doctor First Name:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="doctorFirstNameField" promptText="e.g., Jane" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        
+        <Label text="Doctor Last Name:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <TextField fx:id="doctorLastNameField" promptText="e.g., Smith" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        
+        <Label text="Medicine:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <ComboBox fx:id="medicineComboBox" promptText="Select Medicine" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        
+        <Label text="Quantity:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <TextField fx:id="quantityField" promptText="e.g., 30" prefWidth="200" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+        
+        <Label text="Dosage Instructions:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+        <TextArea fx:id="dosageField" promptText="e.g., Take 1 tablet twice daily" prefWidth="200" prefRowCount="3" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+    </GridPane>
+
+    <!-- Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#handleCancel" style="-fx-background-color: #95a5a6; -fx-text-fill: white;"/>
+        <Button text="Save" onAction="#handleSave" style="-fx-background-color: #3498db; -fx-text-fill: white;"/>
+    </HBox>
+
+</VBox>

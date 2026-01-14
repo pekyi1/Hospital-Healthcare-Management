@@ -7,6 +7,7 @@ public class PatientFeedback {
     private int patientId;
     private int rating;
     private String comments;
+    private String patientName; // Transient, fetched via JOIN
     private Timestamp feedbackDate;
 
     public PatientFeedback() {
@@ -33,6 +34,14 @@ public class PatientFeedback {
 
     public void setPatientId(int patientId) {
         this.patientId = patientId;
+    }
+
+    public String getPatientName() {
+        return patientName;
+    }
+
+    public void setPatientName(String patientName) {
+        this.patientName = patientName;
     }
 
     public int getRating() {
