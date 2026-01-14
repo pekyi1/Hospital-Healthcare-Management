@@ -2,16 +2,26 @@ package com.hospital.controller;
 
 import com.hospital.model.Patient;
 import com.hospital.service.HospitalService;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.util.Callback;
 import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
+import javafx.stage.Stage;
+import javafx.stage.Modality;
 
+import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 public class PatientController {
 
@@ -21,38 +31,25 @@ public class PatientController {
     private TableView<Patient> patientTable;
 
     @FXML
-    private TableColumn<Patient, Void> colSelect;
-    @FXML
     private TableColumn<Patient, Integer> colId;
     @FXML
     private TableColumn<Patient, String> colFirstName;
     @FXML
     private TableColumn<Patient, String> colLastName;
     @FXML
-    private TableColumn<Patient, String> colGender; // "Status"
+    private TableColumn<Patient, String> colGender;
     @FXML
-    private TableColumn<Patient, String> colDOB; // "Last Visit"
+    private TableColumn<Patient, String> colDOB;
     @FXML
-    private TableColumn<Patient, String> colEmail; // "Allergies"
+    private TableColumn<Patient, String> colEmail;
     @FXML
-    private TableColumn<Patient, String> colPhone; // "Doctor"
+    private TableColumn<Patient, String> colPhone;
+    @FXML
+    private TableColumn<Patient, String> colAddress;
+    @FXML
+    private TableColumn<Patient, String> colCreatedAt;
     @FXML
     private TableColumn<Patient, Void> colActions;
-
-    @FXML
-    private TextField firstNameField;
-    @FXML
-    private TextField lastNameField;
-    @FXML
-    private TextField genderField;
-    @FXML
-    private DatePicker dobField;
-    @FXML
-    private TextField emailField;
-    @FXML
-    private TextField phoneField;
-    @FXML
-    private TextField addressField;
 
     private HospitalService hospitalService;
     private ObservableList<Patient> patientList = FXCollections.observableArrayList();
@@ -60,78 +57,82 @@ public class PatientController {
     public void initialize() {
         hospitalService = new HospitalService();
         setupTableColumns();
+        setupActionColumn();
         loadPatients();
-
-        patientTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                populateForm(newSelection);
-            }
-        });
     }
 
     private void setupTableColumns() {
-        // Checkbox Column
-        colSelect.setCellFactory(param -> new TableCell<>() {
-            private final CheckBox checkBox = new CheckBox();
-
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(checkBox);
-                    setAlignment(javafx.geometry.Pos.CENTER);
-                }
-            }
-        });
-
+        // Bind columns to Patient model properties
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colFirstName.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         colLastName.setCellValueFactory(new PropertyValueFactory<>("lastName"));
-
-        // Status Column (Mapped to Gender for demo)
         colGender.setCellValueFactory(new PropertyValueFactory<>("gender"));
-        colGender.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                } else {
-                    Label badge = new Label(item.equalsIgnoreCase("Male") ? "Active" : "New Patient");
-                    badge.getStyleClass().add(item.equalsIgnoreCase("Male") ? "status-active" : "status-new");
-                    setGraphic(badge);
-                    setText(null);
-                    setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                }
-            }
-        });
-
         colDOB.setCellValueFactory(new PropertyValueFactory<>("birthDate"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+        colAddress.setCellValueFactory(new PropertyValueFactory<>("address"));
 
-        // Action Column
-        // Create a dummy column for actions if not present in FXML,
-        // but here we assume colActions is bound in FXML (I added a dummy there but
-        // forgot fx:id maybe? I'll check)
-        // Actually I didn't add fx:id to the Actions column in the FXML replace I just
-        // did.
-        // I will assume the name "Actions" works or I'll need to grab it by index if I
-        // can't bind.
-        // Let's just create the factory for the columns I have IDs for.
+        // Custom cell value factory for created at date
+        colCreatedAt.setCellValueFactory(cellData -> {
+            LocalDateTime createdAt = cellData.getValue().getCreatedAt();
+            if (createdAt == null) {
+                return new SimpleStringProperty("-");
+            }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            return new SimpleStringProperty(createdAt.format(formatter));
+        });
     }
 
-    private void populateForm(Patient p) {
-        firstNameField.setText(p.getFirstName());
-        lastNameField.setText(p.getLastName());
-        genderField.setText(p.getGender());
-        dobField.setValue(p.getBirthDate());
-        emailField.setText(p.getEmail());
-        phoneField.setText(p.getPhone());
-        addressField.setText(p.getAddress());
+    /**
+     * Setup action column with Edit and Delete buttons
+     */
+    private void setupActionColumn() {
+        // Find the Actions column by text if colActions is null
+        TableColumn<Patient, Void> actionsCol = colActions;
+        if (actionsCol == null) {
+            for (TableColumn<Patient, ?> col : patientTable.getColumns()) {
+                if ("Edit".equals(col.getText()) || "Actions".equals(col.getText())) {
+                    actionsCol = (TableColumn<Patient, Void>) col;
+                    break;
+                }
+            }
+        }
+
+        if (actionsCol != null) {
+            actionsCol.setCellFactory(param -> new TableCell<>() {
+                private final Button editBtn = new Button("Edit");
+                private final Button deleteBtn = new Button("Del");
+                private final HBox pane = new HBox(5, editBtn, deleteBtn);
+
+                {
+                    pane.setAlignment(Pos.CENTER);
+                    editBtn.setStyle(
+                            "-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px; -fx-padding: 3 8;");
+                    deleteBtn.setStyle(
+                            "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11px; -fx-padding: 3 8;");
+
+                    editBtn.setOnAction(event -> {
+                        Patient patient = getTableView().getItems().get(getIndex());
+                        handleEditPatient(patient);
+                    });
+
+                    deleteBtn.setOnAction(event -> {
+                        Patient patient = getTableView().getItems().get(getIndex());
+                        handleDeletePatient(patient);
+                    });
+                }
+
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(pane);
+                    }
+                }
+            });
+        }
     }
 
     private void loadPatients() {
@@ -167,89 +168,87 @@ public class PatientController {
 
     @FXML
     private void handleAddPatient() {
-        if (!validateInput())
-            return;
-        Patient patient = new Patient();
-        updatePatientFromForm(patient);
+        openPatientDialog(null);
+    }
 
+    /**
+     * Open patient form dialog for editing
+     */
+    private void handleEditPatient(Patient patient) {
+        openPatientDialog(patient);
+    }
+
+    /**
+     * Open patient form dialog (modal)
+     */
+    private void openPatientDialog(Patient patient) {
         try {
-            hospitalService.registerPatient(patient);
-            loadPatients();
-            handleClear();
-            showAlert("Success", "Patient added successfully.");
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to add patient: " + e.getMessage());
+            // Load FXML
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getResource("/com/hospital/view/PatientFormDialog.fxml"));
+            Parent root = loader.load();
+
+            // Get controller
+            PatientFormDialogController controller = loader.getController();
+
+            // Create stage
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle(patient == null ? "Add New Patient" : "Edit Patient");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(patientTable.getScene().getWindow());
+
+            // Set scene
+            Scene scene = new Scene(root);
+            dialogStage.setScene(scene);
+
+            // Configure controller
+            controller.setDialogStage(dialogStage);
+            controller.setPatient(patient);
+
+            // Show and wait
+            dialogStage.showAndWait();
+
+            // Refresh table if save was successful
+            if (controller.isSaveSuccessful()) {
+                loadPatients();
+            }
+
+        } catch (IOException e) {
+            showAlert("Error", "Failed to open patient form:\n" + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            showAlert("Error", "Unexpected error:\n" + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    @FXML
-    private void handleUpdatePatient() {
-        Patient selected = patientTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("Warning", "Please select a patient to update.");
-            return;
-        }
-        if (!validateInput())
-            return;
-        updatePatientFromForm(selected);
+    /**
+     * Handle delete patient with confirmation
+     */
+    private void handleDeletePatient(Patient patient) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Delete");
+        confirmAlert.setHeaderText("Delete Patient");
+        confirmAlert.setContentText(
+                "Are you sure you want to delete " + patient.getFirstName() + " " + patient.getLastName() + "?");
 
-        try {
-            hospitalService.updatePatient(selected);
-            loadPatients();
-            handleClear();
-            showAlert("Success", "Patient updated successfully.");
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to update patient: " + e.getMessage());
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                hospitalService.deletePatient(patient.getId());
+                loadPatients();
+                showAlert("Success", "Patient deleted successfully.");
+            } catch (SQLException e) {
+                showAlert("Error", "Failed to delete patient: " + e.getMessage());
+            }
         }
-    }
-
-    private void updatePatientFromForm(Patient p) {
-        p.setFirstName(firstNameField.getText());
-        p.setLastName(lastNameField.getText());
-        p.setGender(genderField.getText());
-        p.setBirthDate(dobField.getValue());
-        p.setEmail(emailField.getText());
-        p.setPhone(phoneField.getText());
-        p.setAddress(addressField.getText());
     }
 
     @FXML
     private void handleClear() {
         searchField.clear();
-        firstNameField.clear();
-        lastNameField.clear();
-        genderField.clear();
-        dobField.setValue(null);
-        emailField.clear();
-        phoneField.clear();
-        addressField.clear();
         patientTable.getSelectionModel().clearSelection();
-    }
-
-    private boolean validateInput() {
-        if (firstNameField.getText().isEmpty() || lastNameField.getText().isEmpty() ||
-                emailField.getText().isEmpty() || dobField.getValue() == null) {
-            showAlert("Error", "First Name, Last Name, Email, and DOB are required.");
-            return false;
-        }
-        return true;
-    }
-
-    @FXML
-    private void handleDeletePatient() {
-        Patient selected = patientTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showAlert("Warning", "Please select a patient to delete.");
-            return;
-        }
-
-        try {
-            hospitalService.deletePatient(selected.getId());
-            patientList.remove(selected);
-            showAlert("Success", "Patient deleted successfully.");
-        } catch (SQLException e) {
-            showAlert("Error", "Failed to delete patient: " + e.getMessage());
-        }
+        loadPatients();
     }
 
     private void showAlert(String title, String content) {

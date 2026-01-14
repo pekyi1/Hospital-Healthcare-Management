@@ -22,6 +22,7 @@
                 <Button fx:id="btnAppointments" text="Appointments" onAction="#showAppointments" styleClass="sidebar-button" maxWidth="Infinity"/>
 
                 <Label text="Management" styleClass="sidebar-label"/>
+                <Button fx:id="btnDepartments" text="Departments" onAction="#showDepartments" styleClass="sidebar-button" maxWidth="Infinity"/>
                 <Button fx:id="btnInventory" text="Medical Inventory" onAction="#showInventory" styleClass="sidebar-button" maxWidth="Infinity"/>
                 <Button fx:id="btnPrescriptions" text="Prescriptions" onAction="#showPrescriptions" styleClass="sidebar-button" maxWidth="Infinity"/>
                 <Button fx:id="btnPerformance" text="Performance" onAction="#showPerformance" styleClass="sidebar-button" maxWidth="Infinity"/>
@@ -50,9 +51,6 @@
                 
                 <!-- Spacer -->
                 <Region HBox.hgrow="ALWAYS"/>
-                
-                <!-- Search Bar -->
-                <TextField promptText="Search anything here..." styleClass="search-field" prefWidth="300"/>
                 
                 <!-- User Profile Placeholder -->
                 <Label fx:id="lblWelcome" text="Welcome back, Admin 👋" style="-fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>

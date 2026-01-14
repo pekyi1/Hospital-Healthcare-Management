@@ -5,10 +5,12 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.chart.BarChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.StringConverter;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
@@ -18,11 +20,13 @@ public class DashboardController {
     @FXML
     private Label lblDashboardWelcome;
     @FXML
-    private Label visitorCountLabel;
-    @FXML
     private Label patientCountLabel;
     @FXML
     private Label doctorCountLabel;
+    @FXML
+    private Label appointmentCountLabel;
+    @FXML
+    private Label departmentCountLabel;
 
     @FXML
     private BarChart<String, Number> patientChart;
@@ -46,15 +50,20 @@ public class DashboardController {
     }
 
     private void setupCharts() {
-        // Patient Statistics (Real Data from DB via Service)
+        // Enable animations on charts - bars will grow from 0, pie slices will expand
+        patientChart.setAnimated(true);
+        departmentChart.setAnimated(true);
+
+        // Add an entry animation (Scale Up) for the charts themselves
+        animateChartEntry(patientChart);
+        animateChartEntry(departmentChart);
+
+        // Patient Statistics - Shows patients registered per day of week
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Appointments Last 7 Days");
+        series.setName("Patients by Registration Day");
 
         try {
-            java.util.Map<String, Integer> stats = hospitalService.getAppointmentsPerDay();
-            // Order: Mon -> Sun (Simple approach, or ordered by keys if Map is not sorted)
-            // Ideally use a LinkedHashMap in service or sort here.
-            // For now, explicit add based on day names ensure order.
+            java.util.Map<String, Integer> stats = hospitalService.getPatientsPerDayOfWeek();
             String[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
             for (String day : days) {
                 series.getData().add(new XYChart.Data<>(day, stats.getOrDefault(day, 0)));
@@ -63,20 +72,58 @@ public class DashboardController {
             e.printStackTrace();
         }
 
-        patientChart.getData().clear();
-        patientChart.getData().add(series);
+        // Defer data addition with a slight delay to ensure the scene is ready and
+        // animations trigger visibly
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
+        pause.setOnFinished(e -> {
+            patientChart.getData().clear();
+            patientChart.getData().add(series);
 
-        // Department Distribution (Real Data)
-        try {
-            java.util.Map<String, Integer> deptStats = hospitalService.getDoctorSpecializationStats();
-            ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
-            for (java.util.Map.Entry<String, Integer> entry : deptStats.entrySet()) {
-                pieData.add(new PieChart.Data(entry.getKey(), entry.getValue()));
+            // Department Distribution
+            try {
+                java.util.Map<String, Integer> deptStats = hospitalService.getDoctorsPerDepartment();
+                ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+                for (java.util.Map.Entry<String, Integer> entry : deptStats.entrySet()) {
+                    pieData.add(new PieChart.Data(entry.getKey(), entry.getValue()));
+                }
+                departmentChart.setData(pieData);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
-            departmentChart.setData(pieData);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        });
+        pause.play();
+
+        // Configure Y-axis to show only whole numbers
+        NumberAxis yAxis = (NumberAxis) patientChart.getYAxis();
+        yAxis.setTickUnit(1);
+        yAxis.setMinorTickVisible(false);
+        yAxis.setTickLabelFormatter(new StringConverter<Number>() {
+            @Override
+            public String toString(Number object) {
+                return String.valueOf(object.intValue());
+            }
+
+            @Override
+            public Number fromString(String string) {
+                return Integer.parseInt(string);
+            }
+        });
+    }
+
+    private void animateChartEntry(javafx.scene.Node node) {
+        javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(800),
+                node);
+        st.setFromX(0.8);
+        st.setFromY(0.8);
+        st.setToX(1.0);
+        st.setToY(1.0);
+        st.play();
+
+        javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(javafx.util.Duration.millis(800),
+                node);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+        ft.play();
     }
 
     private void loadStatistics() {
@@ -84,15 +131,18 @@ public class DashboardController {
             try {
                 int pCount = hospitalService.getPatientCount();
                 int dCount = hospitalService.getDoctorCount();
-                int appCount = hospitalService.getAppointmentCount(); // Use total appointments as "Visitors/Activity"
+                int appCount = hospitalService.getAppointmentCount();
+                int deptCount = hospitalService.getAllDepartments().size();
 
                 Platform.runLater(() -> {
-                    if (visitorCountLabel != null)
-                        visitorCountLabel.setText(String.valueOf(appCount));
                     if (patientCountLabel != null)
                         patientCountLabel.setText(String.valueOf(pCount));
                     if (doctorCountLabel != null)
                         doctorCountLabel.setText(String.valueOf(dCount));
+                    if (appointmentCountLabel != null)
+                        appointmentCountLabel.setText(String.valueOf(appCount));
+                    if (departmentCountLabel != null)
+                        departmentCountLabel.setText(String.valueOf(deptCount));
                 });
             } catch (SQLException e) {
                 e.printStackTrace();

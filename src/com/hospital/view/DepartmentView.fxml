@@ -7,13 +7,13 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.hospital.controller.InventoryController"
+      fx:controller="com.hospital.controller.DepartmentController"
       spacing="20.0"
       style="-fx-background-color: #f4f6f8; -fx-padding: 30;">
 
     <!-- Top Header -->
     <HBox alignment="CENTER_LEFT">
-        <Label text="Medical Inventory" styleClass="header-label"/>
+        <Label text="Departments" styleClass="header-label"/>
     </HBox>
 
     <!-- Main Card Container -->
@@ -24,25 +24,21 @@
             <!-- Search -->
             <HBox alignment="CENTER_LEFT" styleClass="search-field" prefWidth="300">
                 <Label text="🔍" textFill="#9ca3af" style="-fx-font-size: 14px; -fx-padding: 0 5 0 0;"/>
-                <TextField fx:id="searchField" promptText="Search inventory..." HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
+                <TextField fx:id="searchField" promptText="Search Department" HBox.hgrow="ALWAYS" onAction="#handleSearch"/>
             </HBox>
             
             <Region HBox.hgrow="ALWAYS"/>
             
-            <Button text="🔄 Refresh" onAction="#handleRefresh" styleClass="button-secondary"/>
-            <Button text="+ Add Item" onAction="#handleAddItem" styleClass="button-primary"/>
+            <Button text="+ Add Department" onAction="#handleAddDepartment" styleClass="button-primary"/>
         </HBox>
 
         <!-- Table -->
-        <TableView fx:id="inventoryTable" VBox.vgrow="ALWAYS">
+        <TableView fx:id="departmentTable" VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="idColumn" text="ID" prefWidth="50.0"/>
-                <TableColumn fx:id="nameColumn" text="Item Name" prefWidth="150.0"/>
-                <TableColumn fx:id="categoryColumn" text="Category" prefWidth="100.0"/>
-                <TableColumn fx:id="quantityColumn" text="Quantity" prefWidth="80.0"/>
-                <TableColumn fx:id="priceColumn" text="Unit Price" prefWidth="100.0"/>
-                <TableColumn fx:id="updatedColumn" text="Last Updated" prefWidth="150.0"/>
-                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="120.0"/>
+                <TableColumn fx:id="colId" text="ID" prefWidth="80.0"/>
+                <TableColumn fx:id="colName" text="Name" prefWidth="200.0"/>
+                <TableColumn fx:id="colLocation" text="Location" prefWidth="250.0"/>
+                <TableColumn fx:id="colActions" text="Edit" prefWidth="150.0"/>
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

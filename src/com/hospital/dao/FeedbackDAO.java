@@ -31,7 +31,12 @@ public class FeedbackDAO {
 
     public List<PatientFeedback> getAllFeedback() throws SQLException {
         List<PatientFeedback> feedbackList = new ArrayList<>();
-        String sql = "SELECT * FROM patient_feedback ORDER BY feedback_date DESC";
+        // Updated query to join with patients table to get First and Last Name
+        String sql = "SELECT pf.*, p.first_name, p.last_name " +
+                "FROM patient_feedback pf " +
+                "JOIN patients p ON pf.patient_id = p.id " +
+                "ORDER BY pf.feedback_date DESC";
+
         try (Connection conn = DBUtil.getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
@@ -43,6 +48,11 @@ public class FeedbackDAO {
                         rs.getInt("rating"),
                         rs.getString("comments"));
                 fb.setFeedbackDate(rs.getTimestamp("feedback_date"));
+
+                // Populate the transient name field
+                String fullName = rs.getString("first_name") + " " + rs.getString("last_name");
+                fb.setPatientName(fullName);
+
                 feedbackList.add(fb);
             }
         }
