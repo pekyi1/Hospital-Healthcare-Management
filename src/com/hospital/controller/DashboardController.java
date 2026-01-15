@@ -91,6 +91,43 @@ public class DashboardController {
             patientChart.getData().clear();
             patientChart.getData().add(series);
 
+            // Fix for "3.5 patients" issue:
+            // Disable auto-ranging and manually set upper bound to an integer
+            NumberAxis yAxis = (NumberAxis) patientChart.getYAxis();
+            yAxis.setAutoRanging(false);
+            yAxis.setLowerBound(0);
+            yAxis.setTickUnit(1);
+            yAxis.setMinorTickVisible(false);
+
+            int maxVal = 0;
+            try {
+                // Find max value in current data
+                Map<String, Integer> currentStats = patientService.getPatientsPerDayOfWeek();
+                for (int count : currentStats.values()) {
+                    if (count > maxVal)
+                        maxVal = count;
+                }
+            } catch (SQLException ex) {
+                /* ignore, safety fallback */
+            }
+
+            // Ensure upper bound is at least 5 for looks, or max + 1
+            int upperBound = (maxVal < 5) ? 5 : (maxVal + 2);
+            yAxis.setUpperBound(upperBound);
+
+            // Force integer labels
+            yAxis.setTickLabelFormatter(new StringConverter<Number>() {
+                @Override
+                public String toString(Number object) {
+                    return String.valueOf(object.intValue());
+                }
+
+                @Override
+                public Number fromString(String string) {
+                    return Integer.parseInt(string);
+                }
+            });
+
             // Department Distribution
             try {
                 java.util.Map<String, Integer> deptStats = doctorService.getDoctorsPerDepartment();
@@ -104,22 +141,6 @@ public class DashboardController {
             }
         });
         pause.play();
-
-        // Configure Y-axis to show only whole numbers
-        NumberAxis yAxis = (NumberAxis) patientChart.getYAxis();
-        yAxis.setTickUnit(1);
-        yAxis.setMinorTickVisible(false);
-        yAxis.setTickLabelFormatter(new StringConverter<Number>() {
-            @Override
-            public String toString(Number object) {
-                return String.valueOf(object.intValue());
-            }
-
-            @Override
-            public Number fromString(String string) {
-                return Integer.parseInt(string);
-            }
-        });
     }
 
     private void animateChartEntry(javafx.scene.Node node) {

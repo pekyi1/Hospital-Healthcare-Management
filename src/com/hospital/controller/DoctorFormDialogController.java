@@ -46,10 +46,7 @@ public class DoctorFormDialogController {
     private Stage dialogStage;
     private boolean saveSuccessful = false;
 
-    // Validation patterns
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s'-]{2,50}$");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9\\-+() ]{7,20}$");
+    // Patterns moved to com.hospital.util.ValidationUtil
 
     public void initialize() {
         doctorService = new DoctorService();
@@ -163,14 +160,14 @@ public class DoctorFormDialogController {
         String firstName = firstNameField.getText().trim();
         if (firstName.isEmpty()) {
             errors.append("• First name is required\n");
-        } else if (!NAME_PATTERN.matcher(firstName).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidName(firstName)) {
             errors.append("• First name must be 2-50 characters (letters only)\n");
         }
 
         String lastName = lastNameField.getText().trim();
         if (lastName.isEmpty()) {
             errors.append("• Last name is required\n");
-        } else if (!NAME_PATTERN.matcher(lastName).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidName(lastName)) {
             errors.append("• Last name must be 2-50 characters (letters only)\n");
         }
 
@@ -184,13 +181,14 @@ public class DoctorFormDialogController {
         }
 
         String email = emailField.getText().trim();
-        if (!email.isEmpty() && !EMAIL_PATTERN.matcher(email).matches()) {
+        if (!email.isEmpty() && !com.hospital.util.ValidationUtil.isValidEmail(email)) {
+            // ValidationUtil uses a stricter regex, but the message remains general
             errors.append("• Invalid email format\n");
         }
 
         String phone = phoneField.getText().trim();
-        if (!phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
-            errors.append("• Invalid phone format\n");
+        if (!phone.isEmpty() && !com.hospital.util.ValidationUtil.isValidPhone(phone)) {
+            errors.append("• Phone must contain exactly 10 digits (e.g., 0541234567)\n");
         }
 
         if (errors.length() > 0) {
