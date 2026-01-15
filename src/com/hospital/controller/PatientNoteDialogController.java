@@ -2,7 +2,7 @@ package com.hospital.controller;
 
 import com.hospital.model.Patient;
 import com.hospital.model.PatientNote;
-import com.hospital.service.HospitalService;
+import com.hospital.service.PatientService;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
@@ -26,13 +26,13 @@ public class PatientNoteDialogController {
     @FXML
     private Button addButton;
 
-    private HospitalService hospitalService;
+    private PatientService patientService;
     private Patient currentPatient;
     private Stage dialogStage;
 
     @FXML
     public void initialize() {
-        hospitalService = new HospitalService();
+        patientService = new PatientService();
         categoryComboBox.getItems().addAll("General", "Nurse Log", "Vitals", "History", "Prescription");
         categoryComboBox.setValue("General");
     }
@@ -50,7 +50,7 @@ public class PatientNoteDialogController {
     private void loadNotes() {
         notesContainer.getChildren().clear();
 
-        List<PatientNote> notes = hospitalService.getPatientNotes(currentPatient.getId());
+        List<PatientNote> notes = patientService.getPatientNotes(currentPatient.getId());
 
         if (notes.isEmpty()) {
             Label placeholder = new Label("No notes found for this patient.");
@@ -119,7 +119,7 @@ public class PatientNoteDialogController {
         PatientNote note = new PatientNote(currentPatient.getId(), category, content);
 
         try {
-            hospitalService.addPatientNote(note);
+            patientService.addPatientNote(note);
             contentArea.clear();
             loadNotes(); // Refresh list
         } catch (Exception e) {

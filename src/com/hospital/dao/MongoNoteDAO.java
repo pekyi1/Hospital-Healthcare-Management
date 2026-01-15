@@ -16,7 +16,9 @@ import java.util.Map;
 
 public class MongoNoteDAO {
 
-    private static final String CONNECTION_STRING = "mongodb+srv://fredpekyi01:0108029048fred@hospital-management.yn972fm.mongodb.net/?appName=Hospital-Management";
+    // TODO: expenses Replace with your actual MongoDB connection string or use
+    // environment variables
+    private static final String CONNECTION_STRING = "mongodb+srv://<username>:<password>@cluster.mongodb.net/?appName=Hospital-Management";
     private static final String DB_NAME = "hospital_db";
     private static final String COLLECTION_NAME = "patient_notes";
 
@@ -24,6 +26,12 @@ public class MongoNoteDAO {
 
     public MongoNoteDAO() {
         try {
+            // Only attempt connection if string is configured
+            if (CONNECTION_STRING.contains("<password>")) {
+                System.out.println("⚠️ MongoDB connection string not configured. Patient notes will not be saved.");
+                return;
+            }
+
             ConnectionString connString = new ConnectionString(CONNECTION_STRING);
             MongoClientSettings settings = MongoClientSettings.builder()
                     .applyConnectionString(connString)

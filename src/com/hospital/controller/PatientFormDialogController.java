@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.Patient;
-import com.hospital.service.HospitalService;
+import com.hospital.service.PatientService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -43,14 +43,14 @@ public class PatientFormDialogController {
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9\\s()+-]{7,20}$");
     private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[A-Za-z0-9\\s,.'-]{5,200}$");
 
-    private HospitalService hospitalService;
+    private PatientService patientService;
     private Patient currentPatient; // null for new patient, populated for edit
     private boolean saveSuccessful = false;
     private Stage dialogStage;
 
     @FXML
     public void initialize() {
-        hospitalService = new HospitalService();
+        patientService = new PatientService();
 
         // Initialize gender dropdown
         genderField.setItems(FXCollections.observableArrayList("Male", "Female"));
@@ -105,12 +105,12 @@ public class PatientFormDialogController {
                 // Add new patient
                 Patient newPatient = new Patient();
                 updatePatientFromForm(newPatient);
-                hospitalService.registerPatient(newPatient);
+                patientService.registerPatient(newPatient);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Patient added successfully!");
             } else {
                 // Update existing patient
                 updatePatientFromForm(currentPatient);
-                hospitalService.updatePatient(currentPatient);
+                patientService.updatePatient(currentPatient);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Patient updated successfully!");
             }
 
