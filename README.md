@@ -23,11 +23,17 @@ A comprehensive, JavaFX-based Hospital Management System backed by a PostgreSQL 
 - **Prescriptions**: Digital prescription management linked to patients and doctors.
 - **Patient Feedback**: System for collecting and reviewing patient satisfaction.
 
+### 📝 Patient Notes (NoSQL)
+- **Cloud-Stored Notes**: Patient notes stored in MongoDB Atlas (cloud NoSQL database).
+- **Unstructured Data**: Flexible storage for nurse logs, vitals, medical history, etc.
+- **Real-Time Sync**: Notes persist instantly to the cloud.
+
 ## Technology Stack
 
 - **Frontend**: JavaFX 25 (FXML based UI)
 - **Backend**: Java 21+ with JDBC
-- **Database**: PostgreSQL 12+
+- **Relational Database**: PostgreSQL 12+
+- **NoSQL Database**: MongoDB Atlas (Cloud)
 - **Styling**: CSS for a modern, clean look
 
 ## Prerequisites
@@ -63,6 +69,19 @@ Before setting up the application, ensure you have the following installed:
 - **Download**: [PostgreSQL JDBC Driver](https://jdbc.postgresql.org/download/)
 - **Place** the JAR file in the `lib/` folder
 
+### 5. MongoDB Java Driver (for Patient Notes)
+- **Version**: 4.11.1
+- **Download** the following JAR files from [Maven Central](https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync/4.11.1):
+  - `bson-4.11.1.jar`
+  - `mongodb-driver-core-4.11.1.jar`
+  - `mongodb-driver-sync-4.11.1.jar`
+- **Place** all three JAR files in the `lib/` folder
+
+### 6. MongoDB Atlas Account (Free)
+- **Sign up** at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+- Create a free cluster and obtain your connection string
+- Update the connection string in `src/com/hospital/dao/MongoNoteDAO.java`
+
 ## Setup Instructions
 
 ### Step 1: Clone or Download the Project
@@ -76,6 +95,9 @@ Ensure your `lib/` folder structure looks like this:
 ```
 lib/
 ├── postgresql-42.7.8.jar
+├── bson-4.11.1.jar
+├── mongodb-driver-core-4.11.1.jar
+├── mongodb-driver-sync-4.11.1.jar
 └── javafx-sdk-25.0.1/
     └── lib/
         ├── javafx.base.jar
@@ -116,25 +138,34 @@ private static final String PASSWORD = "your_password_here";  // Update with you
 > [!IMPORTANT]
 > **Security Note**: The database password is currently hardcoded. For production use, consider using environment variables or a configuration file that's excluded from version control.
 
-### Step 4: Compilation
+### Step 4: Compilation (Recommended Method)
 
-Create a `bin` directory if it doesn't exist, then compile:
+Use the provided PowerShell script for easy compilation and execution:
+
+```powershell
+.\compile.ps1
+```
+
+This script automatically:
+- Compiles all Java files with correct module paths
+- Includes all dependencies (PostgreSQL, MongoDB, JavaFX)
+- Copies FXML/CSS resources
+- Launches the application
+
+### Step 4 (Alternative): Manual Compilation
 
 ```powershell
 # Create bin directory
 mkdir bin -Force
 
-# Generate list of all Java source files
-dir /s /b *.java > sources.txt
-
 # Compile the project
-javac -d bin --module-path "lib/javafx-sdk-25.0.1/lib" --add-modules javafx.controls,javafx.fxml -cp "lib/postgresql-42.7.8.jar;src" @sources.txt
+javac -d bin --module-path "lib/javafx-sdk-25.0.1/lib" --add-modules "javafx.controls,javafx.fxml" -cp "lib/postgresql-42.7.8.jar;lib/mongodb-driver-sync-4.11.1.jar;lib/mongodb-driver-core-4.11.1.jar;lib/bson-4.11.1.jar;src" @sources.txt
 ```
 
 ### Step 5: Run the Application
 
 ```powershell
-java -cp "bin;lib/postgresql-42.7.8.jar" --module-path "lib/javafx-sdk-25.0.1/lib" --add-modules javafx.controls,javafx.fxml com.hospital.Main
+java -cp "bin;lib/postgresql-42.7.8.jar;lib/mongodb-driver-sync-4.11.1.jar;lib/mongodb-driver-core-4.11.1.jar;lib/bson-4.11.1.jar" --module-path "lib/javafx-sdk-25.0.1/lib" --add-modules "javafx.controls,javafx.fxml" com.hospital.Main
 ```
 
 ## Project Structure
@@ -219,9 +250,10 @@ Hospital Healthcare Management/
 
 ## Performance Optimizations
 
-- **Caching**: Implemented LRU Cache for frequent patient lookups used in the dashboard
-- **Indexing**: Database indexes on `last_name` and `specialization` for fast search
-- **Connection Pooling**: Consider implementing connection pooling for production use
+- **Caching**: Implemented HashMap-based in-memory caching for frequent patient/doctor lookups
+- **Indexing**: Database indexes on `last_name`, `specialization`, and `appointment_date` for fast search
+- **Performance Logging**: All database operations are logged to `performance_report.csv` with execution times
+- **NoSQL for Unstructured Data**: Patient notes stored in MongoDB for flexible schema and fast document retrieval
 
 ## Contributing
 

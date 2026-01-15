@@ -29,6 +29,7 @@
             
             <Region HBox.hgrow="ALWAYS"/>
             
+            <Button text="📄 Notes" onAction="#handleViewNotes" styleClass="button-secondary"/>
             <Button text="🔄 Refresh" onAction="#handleRefresh" styleClass="button-secondary"/>
             <Button text="+ Add patient" onAction="#handleAddPatient" styleClass="button-primary"/>
         </HBox>

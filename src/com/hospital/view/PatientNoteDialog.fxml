@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.hospital.controller.PatientNoteDialogController"
+      spacing="15"
+      style="-fx-background-color: white; -fx-padding: 20;"
+      prefWidth="500" prefHeight="600">
+
+    <!-- Header -->
+    <Label fx:id="patientNameLabel" text="Patient Notes" 
+           style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+    
+    <Separator/>
+    
+    <!-- Notes List (Scrollable) -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent;">
+        <VBox fx:id="notesContainer" spacing="10" style="-fx-padding: 5;">
+            <!-- Notes inserted here dynamically -->
+        </VBox>
+    </ScrollPane>
+    
+    <Separator/>
+    
+    <!-- Add Note Section -->
+    <VBox spacing="10" style="-fx-background-color: #f8f9fa; -fx-padding: 15; -fx-background-radius: 8;">
+        <Label text="Add New Note" style="-fx-font-weight: bold;"/>
+        
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Category:"/>
+            <ComboBox fx:id="categoryComboBox" prefWidth="150"/>
+        </HBox>
+        
+        <TextArea fx:id="contentArea" promptText="Type note here... (Unstructured data)" 
+                  prefRowCount="3" wrapText="true"/>
+        
+        <HBox alignment="CENTER_RIGHT" spacing="10">
+             <Button text="Close" onAction="#handleClose" style="-fx-background-color: #95a5a6; -fx-text-fill: white;"/>
+             <Button fx:id="addButton" text="Add Note" onAction="#handleAddNote" 
+                     style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        </HBox>
+    </VBox>
+
+</VBox>

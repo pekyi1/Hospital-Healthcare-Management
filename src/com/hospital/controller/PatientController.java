@@ -251,6 +251,38 @@ public class PatientController {
         loadPatients();
     }
 
+    @FXML
+    private void handleViewNotes() {
+        Patient selected = patientTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showAlert("No Selection", "Please select a patient to view notes.");
+            return;
+        }
+        openPatientNotesDialog(selected);
+    }
+
+    private void openPatientNotesDialog(Patient patient) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/hospital/view/PatientNoteDialog.fxml"));
+            Parent root = loader.load();
+
+            PatientNoteDialogController controller = loader.getController();
+            Stage stage = new Stage();
+            stage.setTitle("Patient Notes - " + patient.getLastName());
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(patientTable.getScene().getWindow());
+            stage.setScene(new Scene(root));
+
+            controller.setDialogStage(stage);
+            controller.setPatient(patient);
+
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Could not open notes dialog: " + e.getMessage());
+        }
+    }
+
     private void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);

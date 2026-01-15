@@ -29,6 +29,7 @@ public class HospitalService {
     private final PrescriptionDAO prescriptionDAO;
     private final FeedbackDAO feedbackDAO;
     private final DepartmentDAO departmentDAO;
+    private final com.hospital.dao.MongoNoteDAO mongoNoteDAO;
 
     // In-Memory Cache
     private Map<Integer, Patient> patientCache = new HashMap<>();
@@ -43,12 +44,28 @@ public class HospitalService {
         this.prescriptionDAO = new PrescriptionDAO();
         this.feedbackDAO = new FeedbackDAO();
         this.departmentDAO = new DepartmentDAO();
+        this.mongoNoteDAO = new com.hospital.dao.MongoNoteDAO();
     }
 
     // Performance Logger
     private void logPerformance(String operation, long startTime) {
         long duration = System.currentTimeMillis() - startTime;
-        System.out.println("[Performance] " + operation + " completed in " + duration + " ms");
+        String message = String.format("[Performance] %s completed in %d ms", operation, duration);
+        System.out.println(message);
+
+        // Append to report file
+        try {
+            java.nio.file.Path path = java.nio.file.Paths.get("performance_report.csv");
+            String timestamp = java.time.LocalDateTime.now().toString();
+            String csvLine = String.format("%s,%s,%d%n", timestamp, operation, duration);
+
+            if (!java.nio.file.Files.exists(path)) {
+                java.nio.file.Files.writeString(path, "Timestamp,Operation,Duration_ms\n");
+            }
+            java.nio.file.Files.writeString(path, csvLine, java.nio.file.StandardOpenOption.APPEND);
+        } catch (java.io.IOException e) {
+            System.err.println("Failed to write to performance report: " + e.getMessage());
+        }
     }
 
     // Patient Services with Caching
@@ -430,5 +447,19 @@ public class HospitalService {
 
         logPerformance("getDoctorSpecializationStats", start);
         return stats;
+    }
+
+    // User Story 4.2: NosQL Patient Notes (MongoDB)
+    public void addPatientNote(com.hospital.model.PatientNote note) {
+        long start = System.currentTimeMillis();
+        mongoNoteDAO.addNote(note);
+        logPerformance("addPatientNote (MongoDB)", start);
+    }
+
+    public List<com.hospital.model.PatientNote> getPatientNotes(int patientId) {
+        long start = System.currentTimeMillis();
+        List<com.hospital.model.PatientNote> notes = mongoNoteDAO.getNotesByPatientId(patientId);
+        logPerformance("getPatientNotes (MongoDB)", start);
+        return notes;
     }
 }
