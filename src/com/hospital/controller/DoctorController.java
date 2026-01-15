@@ -2,7 +2,8 @@ package com.hospital.controller;
 
 import com.hospital.model.Department;
 import com.hospital.model.Doctor;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DepartmentService;
+import com.hospital.service.DoctorService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -52,14 +53,16 @@ public class DoctorController {
     @FXML
     private TableColumn<Doctor, Void> colActions;
 
-    private HospitalService hospitalService;
+    private DoctorService doctorService;
+    private DepartmentService departmentService;
     private ObservableList<Doctor> doctorList = FXCollections.observableArrayList();
 
     // Cache for department names
     private Map<Integer, String> departmentNameCache = new HashMap<>();
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        doctorService = new DoctorService();
+        departmentService = new DepartmentService();
         setupTableColumns();
         setupActionColumn();
         loadDoctors();
@@ -98,7 +101,7 @@ public class DoctorController {
             return departmentNameCache.get(deptId);
         }
         try {
-            Department dept = hospitalService.getDepartmentById(deptId);
+            Department dept = departmentService.getDepartmentById(deptId);
             if (dept != null) {
                 departmentNameCache.put(deptId, dept.getName());
                 return dept.getName();
@@ -162,7 +165,7 @@ public class DoctorController {
         departmentNameCache.clear();
 
         try {
-            List<Doctor> doctors = hospitalService.getAllDoctors();
+            List<Doctor> doctors = doctorService.getAllDoctors();
             doctorList.setAll(doctors);
             doctorTable.setItems(doctorList);
         } catch (SQLException e) {
@@ -181,7 +184,7 @@ public class DoctorController {
         String lowerKeyword = keyword.toLowerCase().trim();
 
         try {
-            List<Doctor> allDoctors = hospitalService.getAllDoctors();
+            List<Doctor> allDoctors = doctorService.getAllDoctors();
             List<Doctor> filtered = allDoctors.stream()
                     .filter(d -> d.getFirstName().toLowerCase().contains(lowerKeyword) ||
                             d.getLastName().toLowerCase().contains(lowerKeyword) ||
@@ -243,7 +246,7 @@ public class DoctorController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.deleteDoctor(doctor.getId());
+                doctorService.deleteDoctor(doctor.getId());
                 loadDoctors();
                 showAlert("Success", "Doctor deleted successfully.");
             } catch (SQLException e) {

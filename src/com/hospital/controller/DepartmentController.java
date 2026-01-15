@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.Department;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DepartmentService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -36,11 +36,11 @@ public class DepartmentController {
     @FXML
     private TableColumn<Department, Void> colActions;
 
-    private HospitalService hospitalService;
+    private DepartmentService departmentService;
     private ObservableList<Department> departmentList = FXCollections.observableArrayList();
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        departmentService = new DepartmentService();
         setupTableColumns();
         setupActionColumn();
         loadDepartments();
@@ -102,7 +102,7 @@ public class DepartmentController {
 
     private void loadDepartments() {
         try {
-            List<Department> departments = hospitalService.getAllDepartments();
+            List<Department> departments = departmentService.getAllDepartments();
             departmentList.setAll(departments);
             departmentTable.setItems(departmentList);
         } catch (SQLException e) {
@@ -117,7 +117,22 @@ public class DepartmentController {
             loadDepartments();
             return;
         }
-        loadDepartments();
+        // Basic search simulation or implementation if Service supports it.
+        // DepartmentService doesn't explicitly have search, so we can filter locally or
+        // just reload for now.
+        // Or implement simple filter:
+        String lower = keyword.toLowerCase();
+        try {
+            List<Department> all = departmentService.getAllDepartments();
+            List<Department> filtered = all.stream()
+                    .filter(d -> d.getName().toLowerCase().contains(lower)
+                            || d.getLocation().toLowerCase().contains(lower))
+                    .toList();
+            departmentList.setAll(filtered);
+            departmentTable.setItems(departmentList);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -165,7 +180,7 @@ public class DepartmentController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.deleteDepartment(department.getId());
+                departmentService.deleteDepartment(department.getId());
                 loadDepartments();
                 showAlert("Success", "Department deleted successfully.");
             } catch (SQLException e) {

@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.Patient;
-import com.hospital.service.HospitalService;
+import com.hospital.service.PatientService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -51,11 +51,11 @@ public class PatientController {
     @FXML
     private TableColumn<Patient, Void> colActions;
 
-    private HospitalService hospitalService;
+    private PatientService patientService;
     private ObservableList<Patient> patientList = FXCollections.observableArrayList();
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        patientService = new PatientService();
         setupTableColumns();
         setupActionColumn();
         loadPatients();
@@ -137,7 +137,7 @@ public class PatientController {
 
     private void loadPatients() {
         try {
-            List<Patient> patients = hospitalService.getAllPatients();
+            List<Patient> patients = patientService.getAllPatients();
             patientList.setAll(patients);
             patientTable.setItems(patientList);
         } catch (SQLException e) {
@@ -153,7 +153,7 @@ public class PatientController {
             return;
         }
         try {
-            List<Patient> patients = hospitalService.searchPatients(keyword);
+            List<Patient> patients = patientService.searchPatients(keyword);
             patientList.setAll(patients);
         } catch (SQLException e) {
             showAlert("Error", "Search failed: " + e.getMessage());
@@ -235,7 +235,7 @@ public class PatientController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.deletePatient(patient.getId());
+                patientService.deletePatient(patient.getId());
                 loadPatients();
                 showAlert("Success", "Patient deleted successfully.");
             } catch (SQLException e) {
@@ -249,6 +249,38 @@ public class PatientController {
         searchField.clear();
         patientTable.getSelectionModel().clearSelection();
         loadPatients();
+    }
+
+    @FXML
+    private void handleViewNotes() {
+        Patient selected = patientTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showAlert("No Selection", "Please select a patient to view notes.");
+            return;
+        }
+        openPatientNotesDialog(selected);
+    }
+
+    private void openPatientNotesDialog(Patient patient) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/hospital/view/PatientNoteDialog.fxml"));
+            Parent root = loader.load();
+
+            PatientNoteDialogController controller = loader.getController();
+            Stage stage = new Stage();
+            stage.setTitle("Patient Notes - " + patient.getLastName());
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(patientTable.getScene().getWindow());
+            stage.setScene(new Scene(root));
+
+            controller.setDialogStage(stage);
+            controller.setPatient(patient);
+
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Could not open notes dialog: " + e.getMessage());
+        }
     }
 
     private void showAlert(String title, String content) {

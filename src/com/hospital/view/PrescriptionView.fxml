@@ -20,7 +20,7 @@
     <VBox styleClass="card" spacing="20.0" VBox.vgrow="ALWAYS">
         
         <!-- Controls Bar -->
-        <HBox spacing="15" alignment="CENTER_LEFT">
+        <HBox fx:id="controlsBar" spacing="15" alignment="CENTER_LEFT">
             <!-- Search -->
             <HBox alignment="CENTER_LEFT" styleClass="search-field" prefWidth="300">
                 <Label text="🔍" textFill="#9ca3af" style="-fx-font-size: 14px; -fx-padding: 0 5 0 0;"/>
@@ -29,7 +29,7 @@
             
             <Region HBox.hgrow="ALWAYS"/>
             
-            <Button text="+ Add Prescription" onAction="#handleAddPrescription" styleClass="button-primary"/>
+            <Button fx:id="btnAddPrescription" text="+ Add Prescription" onAction="#handleAddPrescription" styleClass="button-primary"/>
         </HBox>
 
         <!-- Table -->

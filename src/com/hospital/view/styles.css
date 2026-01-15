@@ -471,3 +471,129 @@
     -fx-border-color: #dee1e6;
     -fx-border-width: 0 0 1 0;
 }
+
+/* ==========================================
+   LOGIN PAGE STYLES
+   ========================================== */
+
+.login-background {
+    -fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 50%, #f093fb 100%);
+}
+
+.login-card {
+    -fx-background-color: white;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.25), 30, 0, 0, 10);
+}
+
+.login-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+    -fx-font-family: "Segoe UI Bold", "Arial Black", sans-serif;
+}
+
+.login-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748b;
+}
+
+.login-field-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #374151;
+}
+
+.login-field {
+    -fx-background-color: #f9fafb;
+    -fx-background-radius: 10;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 12 16 12 16;
+    -fx-font-size: 14px;
+}
+
+.login-field:focused {
+    -fx-background-color: white;
+    -fx-border-color: #667eea;
+    -fx-effect: dropshadow(three-pass-box, rgba(102, 126, 234, 0.25), 8, 0, 0, 0);
+}
+
+.login-button {
+    -fx-background-color: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(102, 126, 234, 0.4), 8, 0, 0, 4);
+}
+
+.login-button:hover {
+    -fx-background-color: linear-gradient(to right, #5a67d8 0%, #6b46c1 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(102, 126, 234, 0.6), 12, 0, 0, 6);
+}
+
+.login-button:pressed {
+    -fx-background-color: linear-gradient(to right, #4c51bf 0%, #553c9a 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(102, 126, 234, 0.3), 4, 0, 0, 2);
+}
+
+.login-error {
+    -fx-background-color: #fef2f2;
+    -fx-text-fill: #dc2626;
+    -fx-padding: 10 16 10 16;
+    -fx-background-radius: 8;
+    -fx-border-color: #fecaca;
+    -fx-border-radius: 8;
+    -fx-font-size: 13px;
+}
+
+.login-footer {
+    -fx-font-size: 11px;
+    -fx-text-fill: #9ca3af;
+    -fx-padding: 10 0 0 0;
+}
+
+/* Role Selection Buttons */
+.role-button {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-text-fill: white;
+    -fx-alignment: CENTER;
+}
+
+.role-admin {
+    -fx-background-color: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(102, 126, 234, 0.4), 8, 0, 0, 4);
+}
+
+.role-admin:hover {
+    -fx-background-color: linear-gradient(to right, #5a67d8 0%, #6b46c1 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(102, 126, 234, 0.6), 12, 0, 0, 6);
+}
+
+.role-doctor {
+    -fx-background-color: linear-gradient(to right, #10b981 0%, #059669 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.4), 8, 0, 0, 4);
+}
+
+.role-doctor:hover {
+    -fx-background-color: linear-gradient(to right, #059669 0%, #047857 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.6), 12, 0, 0, 6);
+}
+
+.role-patient {
+    -fx-background-color: linear-gradient(to right, #3b82f6 0%, #2563eb 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.4), 8, 0, 0, 4);
+}
+
+.role-patient:hover {
+    -fx-background-color: linear-gradient(to right, #2563eb 0%, #1d4ed8 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.6), 12, 0, 0, 6);
+}
