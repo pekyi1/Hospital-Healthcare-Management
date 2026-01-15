@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS appointments;
 DROP TABLE IF EXISTS doctors;
 DROP TABLE IF EXISTS patients;
 DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS users;
 
 -- Create Departments Table
 CREATE TABLE departments (
@@ -125,4 +126,30 @@ INSERT INTO medical_inventory (item_name, category, quantity, unit_price) VALUES
 ('Paracetamol', 'Medicine', 500, 5.00),
 ('Amoxicillin', 'Antibiotic', 200, 15.50),
 ('Bandage', 'Supply', 100, 2.00);
+
+
+-- Create Users Table (Authentication)
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('Admin', 'Doctor', 'Patient')),
+    reference_id INTEGER,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
+
+-- Indexes for Users
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_role ON users(role);
+
+-- Seed Default Admin Account
+-- Password: admin123 (SHA-256 hashed)
+INSERT INTO users (username, password_hash, role, is_active)
+VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Admin', TRUE);
+-- Seed Default Doctor Account
+INSERT INTO users (username, password_hash, role, is_active)
+VALUES ('doctor', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Doctor', TRUE);
+
 
