@@ -3,7 +3,9 @@ package com.hospital.controller;
 import com.hospital.model.Appointment;
 import com.hospital.model.Doctor;
 import com.hospital.model.Patient;
-import com.hospital.service.HospitalService;
+import com.hospital.service.AppointmentService;
+import com.hospital.service.DoctorService;
+import com.hospital.service.PatientService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -46,7 +48,9 @@ public class AppointmentController {
     @FXML
     private TableColumn<Appointment, Void> colActions;
 
-    private HospitalService hospitalService;
+    private AppointmentService appointmentService;
+    private PatientService patientService;
+    private DoctorService doctorService;
     private ObservableList<Appointment> appointmentList = FXCollections.observableArrayList();
 
     // Cache for patient and doctor names
@@ -54,7 +58,9 @@ public class AppointmentController {
     private Map<Integer, String> doctorNameCache = new HashMap<>();
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        appointmentService = new AppointmentService();
+        patientService = new PatientService();
+        doctorService = new DoctorService();
         setupTableColumns();
         setupActionColumn();
         loadAppointments();
@@ -85,7 +91,7 @@ public class AppointmentController {
             return patientNameCache.get(patientId);
         }
         try {
-            Patient patient = hospitalService.getPatientById(patientId);
+            Patient patient = patientService.getPatientById(patientId);
             if (patient != null) {
                 String name = patient.getFirstName() + " " + patient.getLastName();
                 patientNameCache.put(patientId, name);
@@ -102,7 +108,7 @@ public class AppointmentController {
             return doctorNameCache.get(doctorId);
         }
         try {
-            Doctor doctor = hospitalService.getDoctorById(doctorId);
+            Doctor doctor = doctorService.getDoctorById(doctorId);
             if (doctor != null) {
                 String name = "Dr. " + doctor.getFirstName() + " " + doctor.getLastName();
                 doctorNameCache.put(doctorId, name);
@@ -172,7 +178,7 @@ public class AppointmentController {
         doctorNameCache.clear();
 
         try {
-            List<Appointment> appointments = hospitalService.getAllAppointments();
+            List<Appointment> appointments = appointmentService.getAllAppointments();
             appointmentList.setAll(appointments);
             appointmentTable.setItems(appointmentList);
         } catch (SQLException e) {
@@ -240,7 +246,7 @@ public class AppointmentController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.cancelAppointment(appointment.getId());
+                appointmentService.cancelAppointment(appointment.getId());
                 loadAppointments();
                 showAlert("Success", "Appointment deleted successfully.");
             } catch (SQLException e) {

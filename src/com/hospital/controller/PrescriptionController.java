@@ -1,7 +1,10 @@
 package com.hospital.controller;
 
 import com.hospital.model.*;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DoctorService;
+import com.hospital.service.PatientService;
+import com.hospital.service.PrescriptionService;
+import com.hospital.util.SessionManager;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -90,6 +93,8 @@ public class PrescriptionController {
     private TextField searchField;
     @FXML
     private TableView<PrescriptionDisplayItem> prescriptionTable;
+    @FXML
+    private Button btnAddPrescription;
 
     @FXML
     private TableColumn<PrescriptionDisplayItem, String> colPatientName;
@@ -106,7 +111,9 @@ public class PrescriptionController {
     @FXML
     private TableColumn<PrescriptionDisplayItem, Void> colActions;
 
-    private HospitalService hospitalService;
+    private PrescriptionService prescriptionService;
+    private PatientService patientService;
+    private DoctorService doctorService;
     private ObservableList<PrescriptionDisplayItem> prescriptionList = FXCollections.observableArrayList();
 
     // Cache for patient and doctor names
@@ -116,9 +123,26 @@ public class PrescriptionController {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        prescriptionService = new PrescriptionService();
+        patientService = new PatientService();
+        doctorService = new DoctorService();
         setupTableColumns();
-        setupActionColumn();
+
+        // Check role and configure UI
+        boolean isPatient = SessionManager.isPatient();
+
+        if (isPatient) {
+            // Patients can only view prescriptions, not add/edit/delete
+            if (btnAddPrescription != null) {
+                btnAddPrescription.setVisible(false);
+                btnAddPrescription.setManaged(false);
+            }
+            // Don't setup action column for patients (no edit/delete)
+        } else {
+            // Admins and Doctors can add/edit/delete
+            setupActionColumn();
+        }
+
         loadPrescriptions();
     }
 
@@ -165,7 +189,7 @@ public class PrescriptionController {
             return patientNameCache.get(patientId);
         }
         try {
-            Patient patient = hospitalService.getPatientById(patientId);
+            Patient patient = patientService.getPatientById(patientId);
             if (patient != null) {
                 String name = patient.getFirstName() + " " + patient.getLastName();
                 patientNameCache.put(patientId, name);
@@ -184,7 +208,7 @@ public class PrescriptionController {
             return doctorNameCache.get(doctorId);
         }
         try {
-            Doctor doctor = hospitalService.getDoctorById(doctorId);
+            Doctor doctor = doctorService.getDoctorById(doctorId);
             if (doctor != null) {
                 String name = "Dr. " + doctor.getFirstName() + " " + doctor.getLastName();
                 doctorNameCache.put(doctorId, name);
@@ -241,7 +265,7 @@ public class PrescriptionController {
         prescriptionList.clear();
 
         try {
-            List<Prescription> prescriptions = hospitalService.getAllPrescriptionsWithItems();
+            List<Prescription> prescriptions = prescriptionService.getAllPrescriptionsWithItems();
             for (Prescription p : prescriptions) {
                 if (p.getItems() != null && !p.getItems().isEmpty()) {
                     // Create a display row for each item in the prescription
@@ -270,7 +294,7 @@ public class PrescriptionController {
         String lowerKeyword = keyword.toLowerCase().trim();
 
         try {
-            List<Prescription> allPrescriptions = hospitalService.getAllPrescriptionsWithItems();
+            List<Prescription> allPrescriptions = prescriptionService.getAllPrescriptionsWithItems();
             prescriptionList.clear();
 
             for (Prescription p : allPrescriptions) {
@@ -373,7 +397,7 @@ public class PrescriptionController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.deletePrescription(displayItem.getPrescriptionId());
+                prescriptionService.deletePrescription(displayItem.getPrescriptionId());
                 loadPrescriptions();
                 showAlert("Success", "Prescription deleted successfully.");
             } catch (SQLException e) {

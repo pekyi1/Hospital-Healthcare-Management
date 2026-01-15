@@ -9,6 +9,18 @@ A comprehensive, JavaFX-based Hospital Management System backed by a PostgreSQL 
 - **Quick Actions**: One-click access to common tasks like Patient Registration.
 - **Universal Navigation**: Smooth navigation with a history-aware "Back" button.
 
+### 🔐 Authentication & Role-Based Access
+- **Role-Selection Login**: Choose your role (Admin, Doctor, or Patient) on the login screen
+- **Credential-Based Access**: Admin and Doctor roles require username/password authentication
+- **Patient View**: Direct access for patients to submit feedback and view prescriptions
+- **Three User Roles with Specific Permissions**:
+  - **Admin**: Full system access to all modules and functionality
+  - **Doctor**: Clinical access (Dashboard, Patients, Doctors, Appointments, Prescriptions, Feedback)
+  - **Patient**: Limited self-service access:
+    - ✅ Submit feedback (cannot view feedback table)
+    - ✅ View prescriptions (cannot add/edit/delete)
+- **Session Management**: Secure sign-in/sign-out with window state preservation
+
 ### 👥 Patient Management
 - **Registration**: Complete patient profiles with validation.
 - **Search**: Fast, indexed search by name or ID.
@@ -21,7 +33,9 @@ A comprehensive, JavaFX-based Hospital Management System backed by a PostgreSQL 
 ### 💊 Medical & Feedback
 - **Inventory System**: Track medical supplies and equipment.
 - **Prescriptions**: Digital prescription management linked to patients and doctors.
-- **Patient Feedback**: System for collecting and reviewing patient satisfaction.
+- **Patient Feedback**: 
+  - Patients can submit feedback about their experience
+  - Admins and Doctors can view all submitted feedback
 
 ### 📝 Patient Notes (NoSQL)
 - **Cloud-Stored Notes**: Patient notes stored in MongoDB Atlas (cloud NoSQL database).
@@ -137,6 +151,26 @@ private static final String PASSWORD = "your_password_here";  // Update with you
 
 > [!IMPORTANT]
 > **Security Note**: The database password is currently hardcoded. For production use, consider using environment variables or a configuration file that's excluded from version control.
+
+#### 3.4 Set Up User Authentication Table
+Execute the users table script to enable login functionality:
+```powershell
+psql -U postgres -d hospital_db -f src/com/hospital/sql/create_users_table.sql
+```
+
+This creates the `users` table and seeds default accounts:
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `admin` | `admin123` |
+| Doctor | `doctor` | `admin123` |
+
+> [!NOTE]
+> **Patient View** does not require login credentials - patients can access their limited view directly from the login screen.
+
+> [!WARNING]
+> **Change Default Passwords**: After deployment, change the default passwords for security.
+
 
 ### Step 4: Compilation (Recommended Method)
 

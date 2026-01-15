@@ -1,7 +1,10 @@
 package com.hospital.controller;
 
 import com.hospital.model.*;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DoctorService;
+import com.hospital.service.InventoryService;
+import com.hospital.service.PatientService;
+import com.hospital.service.PrescriptionService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -31,7 +34,11 @@ public class PrescriptionFormDialogController {
     @FXML
     private TextArea dosageField;
 
-    private HospitalService hospitalService;
+    private PrescriptionService prescriptionService;
+    private InventoryService inventoryService;
+    private PatientService patientService;
+    private DoctorService doctorService;
+
     private Prescription prescription;
     private PrescriptionItem currentItem;
     private Stage dialogStage;
@@ -43,13 +50,16 @@ public class PrescriptionFormDialogController {
     private Doctor foundDoctor;
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        prescriptionService = new PrescriptionService();
+        inventoryService = new InventoryService();
+        patientService = new PatientService();
+        doctorService = new DoctorService();
         loadMedicines();
     }
 
     private void loadMedicines() {
         try {
-            List<MedicalInventory> medicines = hospitalService.getAllInventoryItems();
+            List<MedicalInventory> medicines = inventoryService.getAllInventoryItems();
             medicineComboBox.setItems(FXCollections.observableArrayList(medicines));
 
             medicineComboBox.setConverter(new StringConverter<MedicalInventory>() {
@@ -91,7 +101,7 @@ public class PrescriptionFormDialogController {
 
         try {
             // Load prescription with items
-            List<Prescription> prescriptions = hospitalService.getAllPrescriptionsWithItems();
+            List<Prescription> prescriptions = prescriptionService.getAllPrescriptionsWithItems();
             for (Prescription p : prescriptions) {
                 if (p.getId() == prescriptionId) {
                     this.prescription = p;
@@ -127,10 +137,11 @@ public class PrescriptionFormDialogController {
     private void loadPrescriptionData(Prescription prescription) {
         // Load patient name
         try {
-            Patient patient = hospitalService.getPatientById(prescription.getPatientId());
+            Patient patient = patientService.getPatientById(prescription.getPatientId());
             if (patient != null) {
                 patientFirstNameField.setText(patient.getFirstName());
                 patientLastNameField.setText(patient.getLastName());
+                foundPatient = patient;
             }
         } catch (SQLException e) {
             // Leave empty
@@ -138,10 +149,11 @@ public class PrescriptionFormDialogController {
 
         // Load doctor name
         try {
-            Doctor doctor = hospitalService.getDoctorById(prescription.getDoctorId());
+            Doctor doctor = doctorService.getDoctorById(prescription.getDoctorId());
             if (doctor != null) {
                 doctorFirstNameField.setText(doctor.getFirstName());
                 doctorLastNameField.setText(doctor.getLastName());
+                foundDoctor = doctor;
             }
         } catch (SQLException e) {
             // Leave empty
@@ -160,7 +172,17 @@ public class PrescriptionFormDialogController {
         }
 
         try {
-            foundPatient = hospitalService.getPatientByName(patientFirstName, patientLastName);
+            List<Patient> patients = patientService.searchPatients(patientFirstName + " " + patientLastName);
+            foundPatient = null;
+            // Best match strategy
+            for (Patient p : patients) {
+                if (p.getFirstName().equalsIgnoreCase(patientFirstName)
+                        && p.getLastName().equalsIgnoreCase(patientLastName)) {
+                    foundPatient = p;
+                    break;
+                }
+            }
+
             if (foundPatient == null) {
                 showAlert("Patient Not Found",
                         "No patient found with the name: " + patientFirstName + " " + patientLastName);
@@ -182,7 +204,7 @@ public class PrescriptionFormDialogController {
         }
 
         try {
-            foundDoctor = hospitalService.getDoctorByName(doctorFirstName, doctorLastName);
+            foundDoctor = doctorService.getDoctorByName(doctorFirstName, doctorLastName);
             if (foundDoctor == null) {
                 showAlert("Doctor Not Found",
                         "No doctor found with the name: " + doctorFirstName + " " + doctorLastName);
@@ -236,9 +258,9 @@ public class PrescriptionFormDialogController {
 
         try {
             if (isEditing && prescription.getId() > 0) {
-                hospitalService.updatePrescriptionWithItems(prescription);
+                prescriptionService.updatePrescriptionWithItems(prescription);
             } else {
-                hospitalService.prescribeMedication(prescription);
+                prescriptionService.prescribeMedication(prescription);
             }
             saveSuccessful = true;
             dialogStage.close();

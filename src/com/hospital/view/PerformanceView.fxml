@@ -5,20 +5,78 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<VBox spacing="10" xmlns="http://javafx.com/javafx"
+<VBox spacing="15" xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.hospital.controller.PerformanceController">
+      fx:controller="com.hospital.controller.PerformanceController"
+      style="-fx-background-color: #f5f6fa;">
 
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <Label text="System Performance Reports" styleClass="header-label">
-        <font>
-            <Font size="20"/>
-        </font>
-    </Label>
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="📊 System Performance Reports" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="refreshButton" text="🔄 Refresh" onAction="#handleRefresh" 
+                style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 8 16; -fx-background-radius: 5; -fx-cursor: hand;"/>
+    </HBox>
 
-    <TextArea fx:id="logArea" editable="false" VBox.vgrow="ALWAYS" wrapText="true"/>
+    <!-- Statistics Cards -->
+    <HBox spacing="15" alignment="CENTER">
+        <!-- Total Operations Card -->
+        <VBox alignment="CENTER" spacing="5" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);" HBox.hgrow="ALWAYS">
+            <Label text="Total Operations" style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;"/>
+            <Label fx:id="totalOperationsLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+        </VBox>
+        
+        <!-- Average Duration Card -->
+        <VBox alignment="CENTER" spacing="5" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);" HBox.hgrow="ALWAYS">
+            <Label text="Average Duration" style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;"/>
+            <Label fx:id="avgDurationLabel" text="0 ms" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #3498db;"/>
+        </VBox>
+        
+        <!-- Fastest Operation Card -->
+        <VBox alignment="CENTER" spacing="5" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);" HBox.hgrow="ALWAYS">
+            <Label text="🚀 Fastest" style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;"/>
+            <Label fx:id="fastestLabel" text="N/A" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #27ae60;" wrapText="true"/>
+        </VBox>
+        
+        <!-- Slowest Operation Card -->
+        <VBox alignment="CENTER" spacing="5" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);" HBox.hgrow="ALWAYS">
+            <Label text="🐢 Slowest" style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;"/>
+            <Label fx:id="slowestLabel" text="N/A" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e74c3c;" wrapText="true"/>
+        </VBox>
+    </HBox>
+
+    <!-- Legend -->
+    <HBox spacing="20" alignment="CENTER" style="-fx-padding: 5;">
+        <Label text="Duration Legend:" style="-fx-font-weight: bold;"/>
+        <HBox spacing="5" alignment="CENTER">
+            <Label text="●" style="-fx-text-fill: #27ae60; -fx-font-size: 16px;"/>
+            <Label text="&lt; 100ms (Fast)" style="-fx-text-fill: #666;"/>
+        </HBox>
+        <HBox spacing="5" alignment="CENTER">
+            <Label text="●" style="-fx-text-fill: #f39c12; -fx-font-size: 16px;"/>
+            <Label text="100-500ms (Medium)" style="-fx-text-fill: #666;"/>
+        </HBox>
+        <HBox spacing="5" alignment="CENTER">
+            <Label text="●" style="-fx-text-fill: #e74c3c; -fx-font-size: 16px;"/>
+            <Label text="&gt; 500ms (Slow)" style="-fx-text-fill: #666;"/>
+        </HBox>
+    </HBox>
+
+    <!-- Performance Table -->
+    <TableView fx:id="performanceTable" VBox.vgrow="ALWAYS" 
+               style="-fx-background-color: white; -fx-background-radius: 8;">
+        <columns>
+            <TableColumn fx:id="timestampColumn" text="Timestamp" prefWidth="220"/>
+            <TableColumn fx:id="operationColumn" text="Operation" prefWidth="250"/>
+            <TableColumn fx:id="durationColumn" text="Duration" prefWidth="120"/>
+        </columns>
+        <placeholder>
+            <Label text="No performance data available. Use the application to generate metrics."/>
+        </placeholder>
+    </TableView>
 
 </VBox>

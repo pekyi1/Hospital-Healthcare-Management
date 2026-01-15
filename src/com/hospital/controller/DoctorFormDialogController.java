@@ -2,7 +2,8 @@ package com.hospital.controller;
 
 import com.hospital.model.Department;
 import com.hospital.model.Doctor;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DepartmentService;
+import com.hospital.service.DoctorService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -38,7 +39,9 @@ public class DoctorFormDialogController {
     @FXML
     private DatePicker createdDateField;
 
-    private HospitalService hospitalService;
+    private DoctorService doctorService;
+    private DepartmentService departmentService;
+
     private Doctor doctor;
     private Stage dialogStage;
     private boolean saveSuccessful = false;
@@ -49,13 +52,14 @@ public class DoctorFormDialogController {
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9\\-+() ]{7,20}$");
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        doctorService = new DoctorService();
+        departmentService = new DepartmentService();
         loadDepartments();
     }
 
     private void loadDepartments() {
         try {
-            List<Department> departments = hospitalService.getAllDepartments();
+            List<Department> departments = departmentService.getAllDepartments();
             departmentComboBox.setItems(FXCollections.observableArrayList(departments));
 
             // Set converter to display department name
@@ -96,7 +100,7 @@ public class DoctorFormDialogController {
 
             // Select the doctor's department in the dropdown
             try {
-                Department dept = hospitalService.getDepartmentById(doctor.getDepartmentId());
+                Department dept = departmentService.getDepartmentById(doctor.getDepartmentId());
                 if (dept != null) {
                     departmentComboBox.setValue(dept);
                 }
@@ -133,9 +137,9 @@ public class DoctorFormDialogController {
 
         try {
             if (doctor.getId() > 0) {
-                hospitalService.updateDoctor(doctor);
+                doctorService.updateDoctor(doctor);
             } else {
-                hospitalService.registerDoctor(doctor);
+                doctorService.registerDoctor(doctor);
             }
             saveSuccessful = true;
             dialogStage.close();

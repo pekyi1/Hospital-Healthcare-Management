@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.Patient;
-import com.hospital.service.HospitalService;
+import com.hospital.service.PatientService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -51,11 +51,11 @@ public class PatientController {
     @FXML
     private TableColumn<Patient, Void> colActions;
 
-    private HospitalService hospitalService;
+    private PatientService patientService;
     private ObservableList<Patient> patientList = FXCollections.observableArrayList();
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        patientService = new PatientService();
         setupTableColumns();
         setupActionColumn();
         loadPatients();
@@ -137,7 +137,7 @@ public class PatientController {
 
     private void loadPatients() {
         try {
-            List<Patient> patients = hospitalService.getAllPatients();
+            List<Patient> patients = patientService.getAllPatients();
             patientList.setAll(patients);
             patientTable.setItems(patientList);
         } catch (SQLException e) {
@@ -153,7 +153,7 @@ public class PatientController {
             return;
         }
         try {
-            List<Patient> patients = hospitalService.searchPatients(keyword);
+            List<Patient> patients = patientService.searchPatients(keyword);
             patientList.setAll(patients);
         } catch (SQLException e) {
             showAlert("Error", "Search failed: " + e.getMessage());
@@ -235,7 +235,7 @@ public class PatientController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.deletePatient(patient.getId());
+                patientService.deletePatient(patient.getId());
                 loadPatients();
                 showAlert("Success", "Patient deleted successfully.");
             } catch (SQLException e) {
