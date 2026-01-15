@@ -1,14 +1,19 @@
 package com.hospital.controller;
 
+import com.hospital.model.User;
+import com.hospital.util.SessionManager;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.application.Platform;
 import javafx.animation.FadeTransition;
 import javafx.util.Duration;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.Stack;
@@ -42,19 +47,13 @@ public class MainController {
     @FXML
     private Button backButton;
 
-    // Chrome Tabs
-    @FXML
-    private Button btnTabAdmin;
-    @FXML
-    private Button btnTabDoctor;
-    @FXML
-    private Button btnTabPatient;
-
     @FXML
     private Label lblWelcome;
 
+    @FXML
+    private Label lblRole;
+
     private static MainController instance;
-    private String currentRole = "Admin"; // Track current role
 
     private Stack<String> navigationHistory = new Stack<>();
     private String currentView = "/com/hospital/view/DashboardView.fxml"; // Default start
@@ -63,15 +62,98 @@ public class MainController {
         return instance;
     }
 
+    /**
+     * Gets the current user's role from the session.
+     */
     public String getCurrentRole() {
-        return currentRole;
+        User currentUser = SessionManager.getCurrentUser();
+        return currentUser != null ? currentUser.getRole() : "Guest";
     }
 
     @FXML
     public void initialize() {
         instance = this;
-        // Default to Admin view
-        switchRoleAdmin();
+
+        // Set up UI based on logged-in user
+        User currentUser = SessionManager.getCurrentUser();
+        if (currentUser != null) {
+            setupUIForRole(currentUser);
+        }
+    }
+
+    /**
+     * Configures the UI based on the logged-in user's role.
+     * 
+     * Role Privileges:
+     * - Admin: Full access to all modules
+     * - Doctor: Dashboard, Patients, Doctors, Appointments, Prescriptions, Feedback
+     * - Patient: Feedback, Prescriptions (view only)
+     */
+    private void setupUIForRole(User user) {
+        String role = user.getRole();
+
+        // Update welcome message
+        if (lblWelcome != null) {
+            switch (role) {
+                case "Admin":
+                    lblWelcome.setText("Welcome, Administrator 👋");
+                    break;
+                case "Doctor":
+                    lblWelcome.setText("Welcome, Doctor 👋");
+                    break;
+                case "Patient":
+                    lblWelcome.setText("Welcome, Patient 👋");
+                    break;
+                default:
+                    lblWelcome.setText("Welcome 👋");
+            }
+        }
+
+        // Update role label
+        if (lblRole != null) {
+            switch (role) {
+                case "Admin":
+                    lblRole.setText("Full System Access");
+                    break;
+                case "Doctor":
+                    lblRole.setText("Clinical Access");
+                    break;
+                case "Patient":
+                    lblRole.setText("Limited View");
+                    break;
+                default:
+                    lblRole.setText(role);
+            }
+        }
+
+        // Configure sidebar visibility based on role
+        boolean isAdmin = "Admin".equals(role);
+        boolean isDoctor = "Doctor".equals(role);
+        boolean isPatient = "Patient".equals(role);
+
+        // Admin: ALL features
+        // Doctor: Dashboard, Patients, Doctors, Appointments, Prescriptions, Feedback
+        // Patient: Feedback, Prescriptions ONLY
+
+        setSidebarButtonVisible(btnDashboard, isAdmin || isDoctor);
+        setSidebarButtonVisible(btnPatients, isAdmin || isDoctor);
+        setSidebarButtonVisible(btnDoctors, isAdmin || isDoctor);
+        setSidebarButtonVisible(btnAppointments, isAdmin || isDoctor);
+        setSidebarButtonVisible(btnDepartments, isAdmin);
+        setSidebarButtonVisible(btnInventory, isAdmin);
+        setSidebarButtonVisible(btnPrescriptions, true); // All roles can view prescriptions
+        setSidebarButtonVisible(btnPerformance, isAdmin);
+        setSidebarButtonVisible(btnFeedback, true); // All roles can access feedback
+
+        // Navigate to appropriate default view based on role
+        if (isAdmin) {
+            showDashboard();
+        } else if (isDoctor) {
+            showDashboard();
+        } else if (isPatient) {
+            // Patients start at Feedback
+            showFeedback();
+        }
     }
 
     @FXML
@@ -82,6 +164,48 @@ public class MainController {
     @FXML
     private void handleExit() {
         Platform.exit();
+    }
+
+    /**
+     * Signs out the current user and returns to the login screen.
+     */
+    @FXML
+    private void handleSignOut() {
+        // Clear the session
+        SessionManager.logout();
+
+        // Navigate back to login screen
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/hospital/view/LoginView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) contentArea.getScene().getWindow();
+
+            // Preserve current window dimensions
+            double width = stage.getWidth();
+            double height = stage.getHeight();
+            boolean isMaximized = stage.isMaximized();
+
+            Scene scene = new Scene(root, width, height);
+
+            // Fade transition
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(200), contentArea);
+            fadeOut.setFromValue(1);
+            fadeOut.setToValue(0);
+            fadeOut.setOnFinished(e -> {
+                stage.setScene(scene);
+                stage.setTitle("Hospital Management System - Login");
+
+                // Restore maximized state
+                if (isMaximized) {
+                    stage.setMaximized(true);
+                }
+            });
+            fadeOut.play();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -153,7 +277,6 @@ public class MainController {
         for (Button btn : buttons) {
             if (btn != null) {
                 btn.getStyleClass().remove("active");
-                // btn.getStyleClass().remove("sidebar-button-selected"); // Legacy
             }
         }
 
@@ -191,70 +314,6 @@ public class MainController {
             if (navigationHistory.isEmpty()) {
                 backButton.setDisable(true);
             }
-        }
-    }
-    // --- Role Switching Logic ---
-
-    @FXML
-    private void switchRoleAdmin() {
-        setRole("Admin");
-        showDashboard();
-    }
-
-    @FXML
-    private void switchRoleDoctor() {
-        setRole("Doctor");
-        showDashboard();
-    }
-
-    @FXML
-    private void switchRolePatient() {
-        setRole("Patient");
-        // Patient might not have a dashboard, or a different one.
-        // For now, load Appointments as default for Patient?
-        // Or just let them see the restricted dashboard.
-        showAppointments(); // Default for patient
-    }
-
-    private void setRole(String role) {
-        this.currentRole = role; // Store current role
-
-        // Welcome Message
-        if (lblWelcome != null) {
-            lblWelcome.setText("Welcome back, " + role + " \uD83D\uDC4B"); // Wave emoji
-        }
-
-        // 1. Update Tab Styles
-        updateTabStyle(btnTabAdmin, role.equals("Admin"));
-        updateTabStyle(btnTabDoctor, role.equals("Doctor"));
-        updateTabStyle(btnTabPatient, role.equals("Patient"));
-
-        // 2. Configure Sidebar based on Role
-        boolean isAdmin = role.equals("Admin");
-        boolean isDoctor = role.equals("Doctor");
-        boolean isPatient = role.equals("Patient");
-
-        // Admin sees everything
-        // Doctor sees: Dashboard, Patients, Appointments, Prescriptions, Feedback
-        // Patient sees: Appointments, Doctors, Prescriptions
-
-        setSidebarButtonVisible(btnDashboard, isAdmin || isDoctor);
-        setSidebarButtonVisible(btnPatients, isAdmin || isDoctor);
-        setSidebarButtonVisible(btnDoctors, isAdmin || isPatient); // Patient needs to find doctors
-        setSidebarButtonVisible(btnAppointments, true); // Everyone needs appointments
-        setSidebarButtonVisible(btnDepartments, isAdmin);
-        setSidebarButtonVisible(btnInventory, isAdmin);
-        setSidebarButtonVisible(btnPrescriptions, true); // Everyone? (Patient views theirs)
-        setSidebarButtonVisible(btnPerformance, isAdmin);
-        setSidebarButtonVisible(btnFeedback, isAdmin || isDoctor); // Maybe patient too?
-    }
-
-    private void updateTabStyle(Button btn, boolean isActive) {
-        if (btn == null)
-            return;
-        btn.getStyleClass().remove("active");
-        if (isActive) {
-            btn.getStyleClass().add("active");
         }
     }
 

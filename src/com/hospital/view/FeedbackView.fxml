@@ -20,13 +20,13 @@
     <VBox styleClass="card" spacing="20.0" VBox.vgrow="ALWAYS">
 
         <!-- Controls Bar -->
-        <HBox spacing="15" alignment="CENTER_LEFT">
-            <Button text="Submit Feedback" onAction="#handleAddFeedback" styleClass="button-primary"/>
+        <HBox fx:id="controlsBar" spacing="15" alignment="CENTER_LEFT">
+            <Button fx:id="btnSubmitFeedback" text="Submit Feedback" onAction="#handleAddFeedback" styleClass="button-primary"/>
             <Region HBox.hgrow="ALWAYS"/>
             <!-- Placeholder for future search or filter if needed -->
         </HBox>
 
-        <!-- Table -->
+        <!-- Table (hidden for Patients) -->
         <TableView fx:id="feedbackTable" VBox.vgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="idColumn" text="ID" prefWidth="50"/>
@@ -36,12 +36,18 @@
                 <TableColumn fx:id="dateColumn" text="Date" prefWidth="150"/>
             </columns>
             <placeholder>
-                <Label text="No feedback loaded (Admin Only)"/>
+                <Label text="No feedback loaded"/>
             </placeholder>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
             </columnResizePolicy>
         </TableView>
+
+        <!-- Patient-only message (shown for Patients) -->
+        <VBox fx:id="patientOnlyPane" visible="false" managed="false" alignment="CENTER" spacing="15" VBox.vgrow="ALWAYS">
+            <Label text="✅ Thank you for your feedback!" style="-fx-font-size: 24px; -fx-text-fill: #10b981; -fx-font-weight: bold;"/>
+            <Label text="Click 'Submit Feedback' above to share your experience" style="-fx-font-size: 14px; -fx-text-fill: #6b7280;"/>
+        </VBox>
 
     </VBox>
 

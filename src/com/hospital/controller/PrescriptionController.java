@@ -2,6 +2,7 @@ package com.hospital.controller;
 
 import com.hospital.model.*;
 import com.hospital.service.HospitalService;
+import com.hospital.util.SessionManager;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -90,6 +91,8 @@ public class PrescriptionController {
     private TextField searchField;
     @FXML
     private TableView<PrescriptionDisplayItem> prescriptionTable;
+    @FXML
+    private Button btnAddPrescription;
 
     @FXML
     private TableColumn<PrescriptionDisplayItem, String> colPatientName;
@@ -118,7 +121,22 @@ public class PrescriptionController {
     public void initialize() {
         hospitalService = new HospitalService();
         setupTableColumns();
-        setupActionColumn();
+
+        // Check role and configure UI
+        boolean isPatient = SessionManager.isPatient();
+
+        if (isPatient) {
+            // Patients can only view prescriptions, not add/edit/delete
+            if (btnAddPrescription != null) {
+                btnAddPrescription.setVisible(false);
+                btnAddPrescription.setManaged(false);
+            }
+            // Don't setup action column for patients (no edit/delete)
+        } else {
+            // Admins and Doctors can add/edit/delete
+            setupActionColumn();
+        }
+
         loadPrescriptions();
     }
 

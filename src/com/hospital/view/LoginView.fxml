@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.hospital.controller.LoginController"
+            fx:id="rootPane"
+            stylesheets="@styles.css"
+            fitToWidth="true"
+            fitToHeight="true"
+            hbarPolicy="NEVER"
+            style="-fx-background-color: transparent; -fx-background: transparent;">
+
+    <StackPane styleClass="login-background" 
+               minHeight="700"
+               alignment="CENTER">
+
+        <VBox alignment="CENTER" spacing="0" maxWidth="450">
+            
+            <!-- Login Card -->
+            <VBox fx:id="loginCard" styleClass="login-card" spacing="20" alignment="CENTER">
+                <padding>
+                    <Insets top="35" right="45" bottom="35" left="45"/>
+                </padding>
+                
+                <!-- Logo and Title -->
+                <VBox alignment="CENTER" spacing="6">
+                    <Label text="🏥" style="-fx-font-size: 48px;"/>
+                    <Label text="WeCare" styleClass="login-title"/>
+                    <Label text="Hospital Management System" styleClass="login-subtitle"/>
+                </VBox>
+                
+                <!-- Role Selection Section (shown initially) -->
+                <VBox fx:id="roleSelectionPane" spacing="12" alignment="CENTER" maxWidth="280">
+                    <Label text="Select your role to continue" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                    
+                    <!-- Admin Button -->
+                    <Button fx:id="btnAdmin" 
+                            text="🔐  Sign in as Admin" 
+                            onAction="#handleAdminClick" 
+                            styleClass="role-button, role-admin"
+                            prefHeight="42"
+                            maxWidth="Infinity"/>
+                    
+                    <!-- Doctor Button -->
+                    <Button fx:id="btnDoctor"
+                            text="👨‍⚕️  Sign in as Doctor" 
+                            onAction="#handleDoctorClick" 
+                            styleClass="role-button, role-doctor"
+                            prefHeight="42"
+                            maxWidth="Infinity"/>
+                    
+                    <!-- Patient Button (direct access) -->
+                    <Button fx:id="btnPatient"
+                            text="👤  Patient View" 
+                            onAction="#handlePatientLogin" 
+                            styleClass="role-button, role-patient"
+                            prefHeight="42"
+                            maxWidth="Infinity"/>
+                </VBox>
+                
+                <!-- Credentials Form (hidden initially) -->
+                <VBox fx:id="credentialsPane" spacing="12" alignment="CENTER" maxWidth="280" visible="false" managed="false">
+                    
+                    <!-- Role indicator -->
+                    <Label fx:id="lblSelectedRole" text="Admin Login" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #374151;"/>
+                    
+                    <!-- Error Label -->
+                    <Label fx:id="lblError" text="" styleClass="login-error" visible="false" managed="false"/>
+                    
+                    <!-- Username Field -->
+                    <VBox spacing="4" alignment="CENTER_LEFT">
+                        <Label text="Username" styleClass="login-field-label"/>
+                        <TextField fx:id="txtUsername" promptText="Enter username" styleClass="login-field" prefHeight="38"/>
+                    </VBox>
+                    
+                    <!-- Password Field -->
+                    <VBox spacing="4" alignment="CENTER_LEFT">
+                        <Label text="Password" styleClass="login-field-label"/>
+                        <PasswordField fx:id="txtPassword" promptText="Enter password" styleClass="login-field" prefHeight="38"/>
+                    </VBox>
+                    
+                    <!-- Login Button -->
+                    <Button fx:id="btnLogin" 
+                            text="Sign In" 
+                            onAction="#handleLogin" 
+                            styleClass="login-button"
+                            prefHeight="42"
+                            maxWidth="Infinity"/>
+                    
+                    <!-- Back Button -->
+                    <Button text="← Back to role selection" 
+                            onAction="#handleBackToRoles" 
+                            style="-fx-background-color: transparent; -fx-text-fill: #667eea; -fx-cursor: hand; -fx-font-size: 12px;"/>
+                </VBox>
+                
+                <!-- Footer -->
+                <Label text="© 2026 WeCare Hospital" styleClass="login-footer"/>
+                
+            </VBox>
+            
+        </VBox>
+        
+    </StackPane>
+    
+</ScrollPane>

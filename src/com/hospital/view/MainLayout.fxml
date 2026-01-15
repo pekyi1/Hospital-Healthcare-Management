@@ -29,33 +29,24 @@
 
                 <Label text="Help &amp; Settings" styleClass="sidebar-label"/>
                 <Button fx:id="btnFeedback" text="Feedbacks" onAction="#showFeedback" styleClass="sidebar-button" maxWidth="Infinity"/>
-                <Button text="Sign Out" onAction="#handleExit" styleClass="sidebar-button" maxWidth="Infinity"/>
+                <Button text="Sign Out" onAction="#handleSignOut" styleClass="sidebar-button" maxWidth="Infinity"/>
             </VBox>
         </ScrollPane>
     </left>
 
-    <!-- Top Section (Tabs + Search) -->
+    <!-- Top Section (User Info) -->
     <top>
-        <VBox>
-            <!-- Chrome Tabs -->
-            <HBox styleClass="chrome-tab-header">
-                <Button fx:id="btnTabAdmin" text="Admin" styleClass="chrome-tab, active" onAction="#switchRoleAdmin"/>
-                <Button fx:id="btnTabDoctor" text="Doctor" styleClass="chrome-tab" onAction="#switchRoleDoctor"/>
-                <Button fx:id="btnTabPatient" text="Patient" styleClass="chrome-tab" onAction="#switchRolePatient"/>
-            </HBox>
-
-            <!-- Old Top Bar (Search and User) -->
-            <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="20">
-                <!-- Back Button -->
-                <Button fx:id="backButton" text="←" onAction="#handleBack" disable="true" style="-fx-background-color: transparent; -fx-font-size: 18px; -fx-cursor: hand;"/>
-                
-                <!-- Spacer -->
-                <Region HBox.hgrow="ALWAYS"/>
-                
-                <!-- User Profile Placeholder -->
-                <Label fx:id="lblWelcome" text="Welcome back, Admin 👋" style="-fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
-            </HBox>
-        </VBox>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="20">
+            <!-- Back Button -->
+            <Button fx:id="backButton" text="←" onAction="#handleBack" disable="true" style="-fx-background-color: transparent; -fx-font-size: 18px; -fx-cursor: hand;"/>
+            
+            <!-- Spacer -->
+            <Region HBox.hgrow="ALWAYS"/>
+            
+            <!-- User Profile Info -->
+            <Label fx:id="lblWelcome" text="Welcome back, Admin 👋" style="-fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label fx:id="lblRole" text="Administrator" style="-fx-text-fill: #6b7280; -fx-font-size: 12px;"/>
+        </HBox>
     </top>
 
     <!-- Main Content Area -->
@@ -66,3 +57,4 @@
     </center>
 
 </BorderPane>
+

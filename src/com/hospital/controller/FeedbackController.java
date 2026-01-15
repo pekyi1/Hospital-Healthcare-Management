@@ -2,6 +2,7 @@ package com.hospital.controller;
 
 import com.hospital.model.PatientFeedback;
 import com.hospital.service.HospitalService;
+import com.hospital.util.SessionManager;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -30,12 +31,13 @@ public class FeedbackController {
     @FXML
     private TableColumn<PatientFeedback, String> dateColumn;
 
+    @FXML
+    private VBox patientOnlyPane;
+
     private HospitalService hospitalService;
 
     public FeedbackController() {
         this.hospitalService = new HospitalService();
-        // Just for demo, assuming we want to list all.
-        // In reality, this might be per-patient or admin only.
     }
 
     @FXML
@@ -46,7 +48,22 @@ public class FeedbackController {
         commentsColumn.setCellValueFactory(new PropertyValueFactory<>("comments"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("feedbackDate"));
 
-        loadFeedback(); // Load existing feedback (requires method in Service/DAO)
+        // Check role and configure UI
+        boolean isPatient = SessionManager.isPatient();
+
+        if (isPatient) {
+            // Patients can only submit feedback, not view the table
+            feedbackTable.setVisible(false);
+            feedbackTable.setManaged(false);
+
+            if (patientOnlyPane != null) {
+                patientOnlyPane.setVisible(true);
+                patientOnlyPane.setManaged(true);
+            }
+        } else {
+            // Admins and Doctors can see the table
+            loadFeedback();
+        }
     }
 
     private void loadFeedback() {
@@ -55,7 +72,6 @@ public class FeedbackController {
             feedbackTable.setItems(FXCollections.observableArrayList(feedbackList));
         } catch (SQLException e) {
             e.printStackTrace();
-            // Optional: showAlert("Error", "Failed to load feedback.");
         }
     }
 
