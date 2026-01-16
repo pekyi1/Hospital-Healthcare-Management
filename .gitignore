@@ -20,7 +20,10 @@ Thumbs.db
 sources.txt
 tmp/
 
-OBJECTIVES_IMPLEMENTATION.md
+
 performance_report.csv
 
 src/config.properties
+
+# Security
+.env

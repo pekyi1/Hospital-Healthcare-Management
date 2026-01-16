@@ -9,16 +9,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public class MongoNoteDAO {
 
-    private static final String CONFIG_FILE = "src/config.properties";
     private static final String DB_NAME = "hospital_db";
     private static final String COLLECTION_NAME = "patient_notes";
     private String connectionString;
@@ -26,10 +22,11 @@ public class MongoNoteDAO {
     private MongoCollection<Document> collection;
 
     public MongoNoteDAO() {
-        loadConfig();
+        this.connectionString = com.hospital.util.EnvUtil.get("MONGODB_URI");
+
         // Only attempt connection if string is configured
         if (connectionString == null || connectionString.isEmpty() || connectionString.contains("<password>")) {
-            System.out.println("⚠️ MongoDB connection string not configured. Patient notes will not be saved.");
+            System.out.println("⚠️ MongoDB connection string not configured in .env. Patient notes will not be saved.");
             return;
         }
 
@@ -39,22 +36,13 @@ public class MongoNoteDAO {
                     .applyConnectionString(connString)
                     .build();
             MongoClient mongoClient = MongoClients.create(settings);
-            MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-            collection = database.getCollection(COLLECTION_NAME);
+            MongoDatabase database = mongoClient
+                    .getDatabase(com.hospital.util.EnvUtil.get("MONGODB_DATABASE", DB_NAME));
+            collection = database.getCollection(com.hospital.util.EnvUtil.get("MONGODB_COLLECTION", COLLECTION_NAME));
             System.out.println("✅ Connected to MongoDB Atlas successfully.");
         } catch (Exception e) {
             System.err.println("❌ Failed to connect to MongoDB: " + e.getMessage());
             e.printStackTrace();
-        }
-    }
-
-    private void loadConfig() {
-        Properties props = new Properties();
-        try (FileInputStream fis = new FileInputStream(CONFIG_FILE)) {
-            props.load(fis);
-            this.connectionString = props.getProperty("mongodb.uri");
-        } catch (IOException e) {
-            System.err.println("⚠️ Warning: Could not load config.properties for MongoDB.");
         }
     }
 

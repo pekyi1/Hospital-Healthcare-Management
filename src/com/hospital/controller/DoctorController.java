@@ -55,10 +55,10 @@ public class DoctorController {
 
     private DoctorService doctorService;
     private DepartmentService departmentService;
-    private ObservableList<Doctor> doctorList = FXCollections.observableArrayList();
+    private final ObservableList<Doctor> doctorList = FXCollections.observableArrayList();
 
     // Cache for department names
-    private Map<Integer, String> departmentNameCache = new HashMap<>();
+    private final Map<Integer, String> departmentNameCache = new HashMap<>();
 
     public void initialize() {
         doctorService = new DoctorService();
