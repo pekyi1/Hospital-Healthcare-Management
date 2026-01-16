@@ -19,3 +19,11 @@ Thumbs.db
 # Temporary files
 sources.txt
 tmp/
+
+
+performance_report.csv
+
+src/config.properties
+
+# Security
+.env

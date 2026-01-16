@@ -5,11 +5,16 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBUtil {
-    private static final String URL = "jdbc:postgresql://localhost:5432/hospital_db";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "0108029048@Advertise";
+    private static String URL;
+    private static String USER;
+    private static String PASSWORD;
 
     static {
+        // Load properties from .env
+        URL = EnvUtil.get("DB_URL", "jdbc:postgresql://localhost:5432/hospital_db");
+        USER = EnvUtil.get("DB_USER", "postgres");
+        PASSWORD = EnvUtil.get("DB_PASSWORD", "");
+
         try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {

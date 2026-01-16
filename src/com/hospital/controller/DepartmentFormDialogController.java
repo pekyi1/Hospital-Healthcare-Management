@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.Department;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DepartmentService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -19,13 +19,13 @@ public class DepartmentFormDialogController {
     @FXML
     private TextField locationField;
 
-    private HospitalService hospitalService;
+    private DepartmentService departmentService;
     private Department department;
     private Stage dialogStage;
     private boolean saveSuccessful = false;
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        departmentService = new DepartmentService();
     }
 
     public void setDialogStage(Stage dialogStage) {
@@ -55,9 +55,9 @@ public class DepartmentFormDialogController {
 
         try {
             if (department.getId() > 0) {
-                hospitalService.updateDepartment(department);
+                departmentService.updateDepartment(department);
             } else {
-                hospitalService.addDepartment(department);
+                departmentService.addDepartment(department);
             }
             saveSuccessful = true;
             dialogStage.close();

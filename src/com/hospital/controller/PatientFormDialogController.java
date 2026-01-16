@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.Patient;
-import com.hospital.service.HospitalService;
+import com.hospital.service.PatientService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -38,19 +38,16 @@ public class PatientFormDialogController {
     private Button cancelButton;
 
     // Regex patterns for validation
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[A-Za-z\\s'-]{2,50}$");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9\\s()+-]{7,20}$");
-    private static final Pattern ADDRESS_PATTERN = Pattern.compile("^[A-Za-z0-9\\s,.'-]{5,200}$");
+    // Patterns moved to ValidationUtil
 
-    private HospitalService hospitalService;
+    private PatientService patientService;
     private Patient currentPatient; // null for new patient, populated for edit
     private boolean saveSuccessful = false;
     private Stage dialogStage;
 
     @FXML
     public void initialize() {
-        hospitalService = new HospitalService();
+        patientService = new PatientService();
 
         // Initialize gender dropdown
         genderField.setItems(FXCollections.observableArrayList("Male", "Female"));
@@ -105,12 +102,12 @@ public class PatientFormDialogController {
                 // Add new patient
                 Patient newPatient = new Patient();
                 updatePatientFromForm(newPatient);
-                hospitalService.registerPatient(newPatient);
+                patientService.registerPatient(newPatient);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Patient added successfully!");
             } else {
                 // Update existing patient
                 updatePatientFromForm(currentPatient);
-                hospitalService.updatePatient(currentPatient);
+                patientService.updatePatient(currentPatient);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Patient updated successfully!");
             }
 
@@ -158,7 +155,7 @@ public class PatientFormDialogController {
         String firstName = firstNameField.getText().trim();
         if (firstName.isEmpty()) {
             errors.append("• First Name is required.\n");
-        } else if (!NAME_PATTERN.matcher(firstName).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidName(firstName)) {
             errors.append(
                     "• First Name must contain only letters, spaces, hyphens, or apostrophes (2-50 characters).\n");
         }
@@ -167,7 +164,7 @@ public class PatientFormDialogController {
         String lastName = lastNameField.getText().trim();
         if (lastName.isEmpty()) {
             errors.append("• Last Name is required.\n");
-        } else if (!NAME_PATTERN.matcher(lastName).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidName(lastName)) {
             errors.append(
                     "• Last Name must contain only letters, spaces, hyphens, or apostrophes (2-50 characters).\n");
         }
@@ -186,19 +183,19 @@ public class PatientFormDialogController {
         String email = emailField.getText().trim();
         if (email.isEmpty()) {
             errors.append("• Email is required.\n");
-        } else if (!EMAIL_PATTERN.matcher(email).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidEmail(email)) {
             errors.append("• Email must be in valid format (e.g., user@example.com).\n");
         }
 
         // Validate Phone (optional but must be valid if provided)
         String phone = phoneField.getText().trim();
-        if (!phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
-            errors.append("• Phone must contain only numbers, spaces, and symbols like (), +, - (7-20 characters).\n");
+        if (!phone.isEmpty() && !com.hospital.util.ValidationUtil.isValidPhone(phone)) {
+            errors.append("• Phone must contain exactly 10 digits (e.g., 0541234567).\n");
         }
 
         // Validate Address (optional but must be valid if provided)
         String address = addressField.getText().trim();
-        if (!address.isEmpty() && !ADDRESS_PATTERN.matcher(address).matches()) {
+        if (!address.isEmpty() && !com.hospital.util.ValidationUtil.isValidAddress(address)) {
             errors.append(
                     "• Address must be 5-200 characters and contain only letters, numbers, and common punctuation.\n");
         }

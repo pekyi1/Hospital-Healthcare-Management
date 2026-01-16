@@ -1,7 +1,7 @@
 package com.hospital.controller;
 
 import com.hospital.model.MedicalInventory;
-import com.hospital.service.HospitalService;
+import com.hospital.service.InventoryService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -38,16 +38,16 @@ public class InventoryController {
     @FXML
     private TableColumn<MedicalInventory, Void> actionsColumn;
 
-    private HospitalService hospitalService;
+    private InventoryService inventoryService;
     private ObservableList<MedicalInventory> inventoryList = FXCollections.observableArrayList();
     private List<MedicalInventory> allItems;
 
     public InventoryController() {
-        this.hospitalService = new HospitalService();
     }
 
     @FXML
     public void initialize() {
+        inventoryService = new InventoryService();
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("itemName"));
         categoryColumn.setCellValueFactory(new PropertyValueFactory<>("category"));
@@ -92,7 +92,7 @@ public class InventoryController {
 
     private void loadInventory() {
         try {
-            allItems = hospitalService.getAllInventoryItems();
+            allItems = inventoryService.getAllInventoryItems();
             inventoryList.setAll(allItems);
             inventoryTable.setItems(inventoryList);
         } catch (SQLException e) {
@@ -127,7 +127,7 @@ public class InventoryController {
 
         result.ifPresent(item -> {
             try {
-                hospitalService.addInventoryItem(item);
+                inventoryService.addInventoryItem(item);
                 loadInventory();
             } catch (SQLException e) {
                 showAlert("Error", "Failed to add item: " + e.getMessage());
@@ -141,7 +141,7 @@ public class InventoryController {
 
         result.ifPresent(updatedItem -> {
             try {
-                hospitalService.updateInventoryItem(updatedItem);
+                inventoryService.updateInventoryItem(updatedItem);
                 loadInventory();
             } catch (SQLException e) {
                 showAlert("Error", "Failed to update item: " + e.getMessage());
@@ -158,7 +158,7 @@ public class InventoryController {
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                hospitalService.deleteInventoryItem(item.getId());
+                inventoryService.deleteInventoryItem(item.getId());
                 loadInventory();
             } catch (SQLException e) {
                 showAlert("Error", "Failed to delete item: " + e.getMessage());

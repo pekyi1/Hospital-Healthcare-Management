@@ -3,7 +3,9 @@ package com.hospital.controller;
 import com.hospital.model.Appointment;
 import com.hospital.model.Doctor;
 import com.hospital.model.Patient;
-import com.hospital.service.HospitalService;
+import com.hospital.service.AppointmentService;
+import com.hospital.service.DoctorService;
+import com.hospital.service.PatientService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 public class AppointmentFormDialogController {
 
@@ -37,7 +40,10 @@ public class AppointmentFormDialogController {
     @FXML
     private TextArea notesField;
 
-    private HospitalService hospitalService;
+    private AppointmentService appointmentService;
+    private PatientService patientService;
+    private DoctorService doctorService;
+
     private Appointment appointment;
     private Stage dialogStage;
     private boolean saveSuccessful = false;
@@ -49,7 +55,9 @@ public class AppointmentFormDialogController {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        appointmentService = new AppointmentService();
+        patientService = new PatientService();
+        doctorService = new DoctorService();
         statusComboBox.setItems(FXCollections.observableArrayList("Scheduled", "Completed", "Cancelled"));
         statusComboBox.getSelectionModel().selectFirst();
     }
@@ -65,10 +73,11 @@ public class AppointmentFormDialogController {
 
             // Load patient name from ID
             try {
-                Patient patient = hospitalService.getPatientById(appointment.getPatientId());
+                Patient patient = patientService.getPatientById(appointment.getPatientId());
                 if (patient != null) {
                     patientFirstNameField.setText(patient.getFirstName());
                     patientLastNameField.setText(patient.getLastName());
+                    foundPatient = patient;
                 }
             } catch (SQLException e) {
                 // Leave fields empty if can't load
@@ -76,10 +85,11 @@ public class AppointmentFormDialogController {
 
             // Load doctor name from ID
             try {
-                Doctor doctor = hospitalService.getDoctorById(appointment.getDoctorId());
+                Doctor doctor = doctorService.getDoctorById(appointment.getDoctorId());
                 if (doctor != null) {
                     doctorFirstNameField.setText(doctor.getFirstName());
                     doctorLastNameField.setText(doctor.getLastName());
+                    foundDoctor = doctor;
                 }
             } catch (SQLException e) {
                 // Leave fields empty if can't load
@@ -112,7 +122,20 @@ public class AppointmentFormDialogController {
         }
 
         try {
-            foundPatient = hospitalService.getPatientByName(patientFirstName, patientLastName);
+            // Use search to find patient
+            List<Patient> patients = patientService.searchPatients(patientFirstName + " " + patientLastName);
+            foundPatient = null;
+            // Simple logic: pick exact match if possible
+            for (Patient p : patients) {
+                if (p.getFirstName().equalsIgnoreCase(patientFirstName)
+                        && p.getLastName().equalsIgnoreCase(patientLastName)) {
+                    foundPatient = p;
+                    break;
+                }
+            }
+            // If still null, maybe accept the first one if strict match fails?
+            // For safety, let's require semi-strict match or user to be precise.
+
             if (foundPatient == null) {
                 showAlert("Patient Not Found",
                         "No patient found with the name: " + patientFirstName + " " + patientLastName +
@@ -135,7 +158,7 @@ public class AppointmentFormDialogController {
         }
 
         try {
-            foundDoctor = hospitalService.getDoctorByName(doctorFirstName, doctorLastName);
+            foundDoctor = doctorService.getDoctorByName(doctorFirstName, doctorLastName);
             if (foundDoctor == null) {
                 showAlert("Doctor Not Found",
                         "No doctor found with the name: " + doctorFirstName + " " + doctorLastName +
@@ -177,9 +200,9 @@ public class AppointmentFormDialogController {
 
         try {
             if (appointment.getId() > 0) {
-                hospitalService.updateAppointment(appointment);
+                appointmentService.updateAppointment(appointment);
             } else {
-                hospitalService.scheduleAppointment(appointment);
+                appointmentService.scheduleAppointment(appointment);
             }
             saveSuccessful = true;
             dialogStage.close();

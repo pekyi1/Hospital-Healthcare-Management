@@ -1,7 +1,10 @@
 package com.hospital.controller;
 
+import com.hospital.model.Patient;
 import com.hospital.model.PatientFeedback;
-import com.hospital.service.HospitalService;
+import com.hospital.service.FeedbackService;
+import com.hospital.service.PatientService;
+import com.hospital.util.SessionManager;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -9,7 +12,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.ButtonBar.ButtonData;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -30,37 +32,55 @@ public class FeedbackController {
     @FXML
     private TableColumn<PatientFeedback, String> dateColumn;
 
-    private HospitalService hospitalService;
+    @FXML
+    private VBox patientOnlyPane;
+
+    private FeedbackService feedbackService;
+    private PatientService patientService;
 
     public FeedbackController() {
-        this.hospitalService = new HospitalService();
-        // Just for demo, assuming we want to list all.
-        // In reality, this might be per-patient or admin only.
     }
 
     @FXML
     public void initialize() {
+        feedbackService = new FeedbackService();
+        patientService = new PatientService();
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         patientNameColumn.setCellValueFactory(new PropertyValueFactory<>("patientName"));
         ratingColumn.setCellValueFactory(new PropertyValueFactory<>("rating"));
         commentsColumn.setCellValueFactory(new PropertyValueFactory<>("comments"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("feedbackDate"));
 
-        loadFeedback(); // Load existing feedback (requires method in Service/DAO)
+        // Check role and configure UI
+        boolean isPatient = SessionManager.isPatient();
+
+        if (isPatient) {
+            // Patients can only submit feedback, not view the table
+            if (feedbackTable != null) {
+                feedbackTable.setVisible(false);
+                feedbackTable.setManaged(false);
+            }
+
+            if (patientOnlyPane != null) {
+                patientOnlyPane.setVisible(true);
+                patientOnlyPane.setManaged(true);
+            }
+        } else {
+            // Admins and Doctors can see the table
+            loadFeedback();
+        }
     }
 
     private void loadFeedback() {
         try {
-            List<PatientFeedback> feedbackList = hospitalService.getAllFeedback();
+            List<PatientFeedback> feedbackList = feedbackService.getAllFeedback();
             feedbackTable.setItems(FXCollections.observableArrayList(feedbackList));
         } catch (SQLException e) {
             e.printStackTrace();
-            // Optional: showAlert("Error", "Failed to load feedback.");
         }
     }
 
-    // Actually, I'll implement the "Add" feature primarily as that's the core
-    // requirement (Submit Feedback).
     @FXML
     private void handleAddFeedback() {
         Dialog<PatientFeedback> dialog = new Dialog<>();
@@ -113,8 +133,32 @@ public class FeedbackController {
                         return null;
                     }
 
-                    // Lookup patient by name
-                    com.hospital.model.Patient patient = hospitalService.getPatientByName(firstName, lastName);
+                    // Lookup patient by name using search
+                    List<Patient> searchResults = patientService.searchPatients(firstName + " " + lastName);
+                    Patient patient = null;
+                    // Ideally we should find exact match, but for now take first if available
+                    if (!searchResults.isEmpty()) {
+                        // Simple heuristic: Try to match both names
+                        for (Patient p : searchResults) {
+                            if (p.getFirstName().equalsIgnoreCase(firstName)
+                                    && p.getLastName().equalsIgnoreCase(lastName)) {
+                                patient = p;
+                                break;
+                            }
+                        }
+                        // If no exact match found but search returned something, maybe strict check is
+                        // needed?
+                        // The searchPatients might be broad.
+                        if (patient == null) {
+                            // Fallback or just fail? For now, let's just pick first if "close enough" isn't
+                            // implemented?
+                            // Actually searchPatients does LIKE query. Let's assume user is accurate.
+                            // Better yet, let's require exact match for safety in "Login-less" feedback
+                            // context (simulation).
+                            // If exact match not found in list, return null.
+                        }
+                    }
+
                     if (patient == null) {
                         return null;
                     }
@@ -134,54 +178,40 @@ public class FeedbackController {
         // Add validation to prevent closing if patient not found
         final Button btOk = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
         btOk.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-            // simplified validation filter
+            // Let the result converter handle logic, if null is returned, dialog closes
+            // with empty result
+            // which we handle in ifPresentOrElse below.
+            // Wait, resultConverter returning null creates empty Optional result, dialog
+            // closes.
         });
 
         Optional<PatientFeedback> result = dialog.showAndWait();
         result.ifPresentOrElse(fb -> {
             try {
-                hospitalService.submitFeedback(fb);
+                feedbackService.submitFeedback(fb);
                 showAlert("Success", "Feedback submitted!");
-                loadFeedback(); // Refresh table
+                if (!SessionManager.isPatient()) {
+                    loadFeedback(); // Refresh table only if view is visible
+                }
             } catch (SQLException e) {
                 showAlert("Error", "Failed to submit feedback: " + e.getMessage());
             }
         }, () -> {
-            // If we are here, it means either Cancel was pressed OR the converter returned
-            // null.
-            // If we assume Cancel is benign, we just need to handling the "Patient Not
-            // Found case".
-            // Ideally we'd show an error *before* closing.
-            // For now, if the user clicked "Submit" but inputs were invalid, we can just
-            // show an alert.
-            // But checking *which* button was clicked is hard in the lambda for
-            // showAndWait.
-
-            // Re-implementing simplified flow to allow error storage:
-            // Since we can't easily distinguish Cancel from Invalid in this standard Dialog
-            // pattern without more code,
-            // I will simplify: If the inputs are non-empty but result is null, it's likely
-            // a "Patient Not Found".
-            // But wait, 'showAndWait' returns empty if Cancel is clicked.
-
-            // Let's refine the logic to be robust:
-            // We'll verify the patient *inside* the result converter, and if null, we show
-            // an alert immediately.
-            // But you can't show alert easily from inside converter on some threads/UI
-            // stacks without blocking.
-            // Let's keep it simple: If converter returns null, we assume valid failure
-            // logic was handled or it was cancel.
-
-            // To properly Notify "Patient Not Found":
+            // Check if input was provided but patient not found
             String fn = firstNameField.getText();
             String ln = lastNameField.getText();
             if (fn != null && !fn.isEmpty() && ln != null && !ln.isEmpty()) {
-                // Only check DB if name was entered (avoids check on Cancel)
-                // This is a bit "hacky" post-dialog check but works for "Submit" attempt
-                // detection
-                // effectively if we assume they typed something.
                 try {
-                    if (hospitalService.getPatientByName(fn, ln) == null) {
+                    // Quick re-check for error message
+                    List<Patient> searchResults = patientService.searchPatients(fn + " " + ln);
+                    boolean found = false;
+                    for (Patient p : searchResults) {
+                        if (p.getFirstName().equalsIgnoreCase(fn) && p.getLastName().equalsIgnoreCase(ln)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
                         showAlert("Error", "Patient not found: " + fn + " " + ln);
                     }
                 } catch (SQLException e) {

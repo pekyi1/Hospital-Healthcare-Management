@@ -1,6 +1,9 @@
 package com.hospital.controller;
 
-import com.hospital.service.HospitalService;
+import com.hospital.service.PatientService;
+import com.hospital.service.DoctorService;
+import com.hospital.service.AppointmentService;
+import com.hospital.service.DepartmentService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -11,6 +14,9 @@ import javafx.scene.chart.XYChart;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.StringConverter;
+import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
+import javafx.util.Duration;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
@@ -33,10 +39,16 @@ public class DashboardController {
     @FXML
     private PieChart departmentChart;
 
-    private HospitalService hospitalService;
+    private PatientService patientService;
+    private DoctorService doctorService;
+    private AppointmentService appointmentService;
+    private DepartmentService departmentService;
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        patientService = new PatientService();
+        doctorService = new DoctorService();
+        appointmentService = new AppointmentService();
+        departmentService = new DepartmentService();
 
         // Update welcome message based on current role
         MainController mainController = MainController.getInstance();
@@ -63,7 +75,7 @@ public class DashboardController {
         series.setName("Patients by Registration Day");
 
         try {
-            java.util.Map<String, Integer> stats = hospitalService.getPatientsPerDayOfWeek();
+            java.util.Map<String, Integer> stats = patientService.getPatientsPerDayOfWeek();
             String[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
             for (String day : days) {
                 series.getData().add(new XYChart.Data<>(day, stats.getOrDefault(day, 0)));
@@ -79,9 +91,46 @@ public class DashboardController {
             patientChart.getData().clear();
             patientChart.getData().add(series);
 
+            // Fix for "3.5 patients" issue:
+            // Disable auto-ranging and manually set upper bound to an integer
+            NumberAxis yAxis = (NumberAxis) patientChart.getYAxis();
+            yAxis.setAutoRanging(false);
+            yAxis.setLowerBound(0);
+            yAxis.setTickUnit(1);
+            yAxis.setMinorTickVisible(false);
+
+            int maxVal = 0;
+            try {
+                // Find max value in current data
+                Map<String, Integer> currentStats = patientService.getPatientsPerDayOfWeek();
+                for (int count : currentStats.values()) {
+                    if (count > maxVal)
+                        maxVal = count;
+                }
+            } catch (SQLException ex) {
+                /* ignore, safety fallback */
+            }
+
+            // Ensure upper bound is at least 5 for looks, or max + 1
+            int upperBound = (maxVal < 5) ? 5 : (maxVal + 2);
+            yAxis.setUpperBound(upperBound);
+
+            // Force integer labels
+            yAxis.setTickLabelFormatter(new StringConverter<Number>() {
+                @Override
+                public String toString(Number object) {
+                    return String.valueOf(object.intValue());
+                }
+
+                @Override
+                public Number fromString(String string) {
+                    return Integer.parseInt(string);
+                }
+            });
+
             // Department Distribution
             try {
-                java.util.Map<String, Integer> deptStats = hospitalService.getDoctorsPerDepartment();
+                java.util.Map<String, Integer> deptStats = doctorService.getDoctorsPerDepartment();
                 ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
                 for (java.util.Map.Entry<String, Integer> entry : deptStats.entrySet()) {
                     pieData.add(new PieChart.Data(entry.getKey(), entry.getValue()));
@@ -92,35 +141,17 @@ public class DashboardController {
             }
         });
         pause.play();
-
-        // Configure Y-axis to show only whole numbers
-        NumberAxis yAxis = (NumberAxis) patientChart.getYAxis();
-        yAxis.setTickUnit(1);
-        yAxis.setMinorTickVisible(false);
-        yAxis.setTickLabelFormatter(new StringConverter<Number>() {
-            @Override
-            public String toString(Number object) {
-                return String.valueOf(object.intValue());
-            }
-
-            @Override
-            public Number fromString(String string) {
-                return Integer.parseInt(string);
-            }
-        });
     }
 
     private void animateChartEntry(javafx.scene.Node node) {
-        javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(800),
-                node);
+        ScaleTransition st = new ScaleTransition(Duration.millis(800), node);
         st.setFromX(0.8);
         st.setFromY(0.8);
         st.setToX(1.0);
         st.setToY(1.0);
         st.play();
 
-        javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(javafx.util.Duration.millis(800),
-                node);
+        FadeTransition ft = new FadeTransition(Duration.millis(800), node);
         ft.setFromValue(0.0);
         ft.setToValue(1.0);
         ft.play();
@@ -129,10 +160,10 @@ public class DashboardController {
     private void loadStatistics() {
         new Thread(() -> {
             try {
-                int pCount = hospitalService.getPatientCount();
-                int dCount = hospitalService.getDoctorCount();
-                int appCount = hospitalService.getAppointmentCount();
-                int deptCount = hospitalService.getAllDepartments().size();
+                int pCount = patientService.getPatientCount();
+                int dCount = doctorService.getDoctorCount();
+                int appCount = appointmentService.getAppointmentCount();
+                int deptCount = departmentService.getAllDepartments().size();
 
                 Platform.runLater(() -> {
                     if (patientCountLabel != null)

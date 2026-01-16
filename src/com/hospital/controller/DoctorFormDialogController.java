@@ -2,7 +2,8 @@ package com.hospital.controller;
 
 import com.hospital.model.Department;
 import com.hospital.model.Doctor;
-import com.hospital.service.HospitalService;
+import com.hospital.service.DepartmentService;
+import com.hospital.service.DoctorService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -38,24 +39,24 @@ public class DoctorFormDialogController {
     @FXML
     private DatePicker createdDateField;
 
-    private HospitalService hospitalService;
+    private DoctorService doctorService;
+    private DepartmentService departmentService;
+
     private Doctor doctor;
     private Stage dialogStage;
     private boolean saveSuccessful = false;
 
-    // Validation patterns
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s'-]{2,50}$");
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9\\-+() ]{7,20}$");
+    // Patterns moved to com.hospital.util.ValidationUtil
 
     public void initialize() {
-        hospitalService = new HospitalService();
+        doctorService = new DoctorService();
+        departmentService = new DepartmentService();
         loadDepartments();
     }
 
     private void loadDepartments() {
         try {
-            List<Department> departments = hospitalService.getAllDepartments();
+            List<Department> departments = departmentService.getAllDepartments();
             departmentComboBox.setItems(FXCollections.observableArrayList(departments));
 
             // Set converter to display department name
@@ -96,7 +97,7 @@ public class DoctorFormDialogController {
 
             // Select the doctor's department in the dropdown
             try {
-                Department dept = hospitalService.getDepartmentById(doctor.getDepartmentId());
+                Department dept = departmentService.getDepartmentById(doctor.getDepartmentId());
                 if (dept != null) {
                     departmentComboBox.setValue(dept);
                 }
@@ -133,9 +134,9 @@ public class DoctorFormDialogController {
 
         try {
             if (doctor.getId() > 0) {
-                hospitalService.updateDoctor(doctor);
+                doctorService.updateDoctor(doctor);
             } else {
-                hospitalService.registerDoctor(doctor);
+                doctorService.registerDoctor(doctor);
             }
             saveSuccessful = true;
             dialogStage.close();
@@ -159,14 +160,14 @@ public class DoctorFormDialogController {
         String firstName = firstNameField.getText().trim();
         if (firstName.isEmpty()) {
             errors.append("• First name is required\n");
-        } else if (!NAME_PATTERN.matcher(firstName).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidName(firstName)) {
             errors.append("• First name must be 2-50 characters (letters only)\n");
         }
 
         String lastName = lastNameField.getText().trim();
         if (lastName.isEmpty()) {
             errors.append("• Last name is required\n");
-        } else if (!NAME_PATTERN.matcher(lastName).matches()) {
+        } else if (!com.hospital.util.ValidationUtil.isValidName(lastName)) {
             errors.append("• Last name must be 2-50 characters (letters only)\n");
         }
 
@@ -180,13 +181,14 @@ public class DoctorFormDialogController {
         }
 
         String email = emailField.getText().trim();
-        if (!email.isEmpty() && !EMAIL_PATTERN.matcher(email).matches()) {
+        if (!email.isEmpty() && !com.hospital.util.ValidationUtil.isValidEmail(email)) {
+            // ValidationUtil uses a stricter regex, but the message remains general
             errors.append("• Invalid email format\n");
         }
 
         String phone = phoneField.getText().trim();
-        if (!phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
-            errors.append("• Invalid phone format\n");
+        if (!phone.isEmpty() && !com.hospital.util.ValidationUtil.isValidPhone(phone)) {
+            errors.append("• Phone must contain exactly 10 digits (e.g., 0541234567)\n");
         }
 
         if (errors.length() > 0) {
